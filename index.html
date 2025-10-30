@@ -183,6 +183,39 @@
         </div>
     </footer>
 
+    <!-- Product Modal -->
+    <div id="product-modal" class="modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal__backdrop"></div>
+      <div class="modal__dialog" role="document">
+        <button class="modal__close" type="button" aria-label="Закрыть">✕</button>
+        <div class="modal__content">
+          <div class="modal__media">
+            <div class="modal__image-wrap">
+              <img id="modal-image" alt="">
+              <div id="modal-image-ph" class="modal__placeholder">🏠</div>
+            </div>
+          </div>
+          <div class="modal__details">
+            <h2 id="modal-title" class="modal__title"></h2>
+            <div class="modal__price-row">
+              <div id="modal-price" class="modal__price"></div>
+              <div id="modal-badges" class="modal__badges"></div>
+            </div>
+            <div class="modal__meta">
+              <div class="meta-item"><span>Бренд:</span> <strong id="modal-brand"></strong></div>
+              <div class="meta-item"><span>Цвет:</span> <strong id="modal-color"></strong></div>
+              <div class="meta-item"><span>Статус:</span> <strong id="modal-status"></strong></div>
+            </div>
+            <p id="modal-desc" class="modal__desc"></p>
+            <div class="modal__actions">
+              <a href="https://vk.com/plitochik44" target="_blank" class="btn btn-primary">Связаться</a>
+              <button type="button" class="btn" id="modal-close-btn">Закрыть</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Scripts (ES Modules for Vite) -->
     <script type="module" src="catalog.js"></script>
     <script type="module" src="main.js"></script>
