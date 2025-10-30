@@ -1,10 +1,9 @@
 // Инициализация каталога плитки
-document.addEventListener('DOMContentLoaded', function() {
-    // Проверяем, что класс TileCatalog загружен
-    if (typeof TileCatalog !== 'undefined') {
-        // Создаем экземпляр каталога
-        window.tileCatalog = new TileCatalog();
-    } else {
-        console.error('TileCatalog class not found');
+// Единая точка входа: не создаем второй экземпляр, если уже инициализирован
+(function(){
+  document.addEventListener('DOMContentLoaded', function() {
+    if (window.TileCatalog && !window.catalog) {
+      window.catalog = new TileCatalog();
     }
-});
+  });
+})();
