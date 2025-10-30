@@ -1,5 +1,22 @@
-/* Ensure collapsible gets content mounted and opens */
-.products-toolbar{display:grid}
+/* Mobile filters: final isolation */
+@media (max-width: 768px){
+  /* desktop sidebar hidden on mobile */
+  #filters-sidebar{display:none!important}
+  /* show mobile toolbar */
+  .products-toolbar{display:grid!important}
+}
+@media (min-width: 769px){
+  /* mobile collapsible hidden on desktop */
+  #filters-collapsible{display:none!important}
+}
+
+/* Collapsible animation */
 #filters-collapsible{overflow:hidden;max-height:0;opacity:0;transition:max-height .28s ease,opacity .2s ease}
-#filters-collapsible.open{max-height:700px;opacity:1}
-@media (min-width: 769px){#filters-collapsible{display:none!important}}
+#filters-collapsible.open{max-height:650px;opacity:1}
+
+/* Toolbar alignment */
+@media (max-width: 768px){
+  .controls-box{margin-top:.5rem}
+  .sort-select{min-width:180px}
+  .view-controls{margin-left:auto}
+}
