@@ -1,5 +1,5 @@
 /**
- * Каталог плитки - Sync fixes: single render after data load, proper filters init
+ * Каталог плитки - Sync fixes + remove demo fallback
  */
 
 class TileCatalog {
@@ -13,12 +13,26 @@ class TileCatalog {
     this.initElements();
     this.initTheme();
     this.initEventListeners();
-    await this.loadData(); // ждём данные
-    this.initFilters();    // инициализируем фильтры по реальным данным
-    this.applyFilters();   // один раз применяем
-    this.renderProducts(); // и рендерим
-    this.hideLoadingScreen();
-    const isOpen=this.elements.filtersToggle?.checked||false; this.syncFiltersPlacement(isOpen);
+    try {
+      await this.loadData();
+      this.initFilters();
+      this.applyFilters();
+      this.renderProducts();
+    } catch (e) {
+      this.showFatal(`Ошибка загрузки данных: ${e?.message||e}`);
+    } finally {
+      this.hideLoadingScreen();
+      const isOpen=this.elements.filtersToggle?.checked||false; this.syncFiltersPlacement(isOpen);
+    }
+  }
+
+  // === Utils UI ===
+  showFatal(msg){
+    const box=document.createElement('div');
+    box.style.cssText='position:fixed;inset:0;display:grid;place-items:center;background:rgba(15,23,42,.92);color:#fff;z-index:10000;font:16px/1.5 Inter,system-ui';
+    box.innerHTML=`<div style="max-width:680px;padding:20px 24px;border:1px solid #334155;border-radius:12px;background:#0f172a;box-shadow:0 20px 40px rgba(0,0,0,.35)"><h3 style="margin:0 0 8px;font-size:18px">Не удалось загрузить каталог</h3><p style="margin:0 0 12px;opacity:.85">${msg}</p><button id="fatal-close" style="padding:10px 14px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#fff;cursor:pointer">Закрыть</button></div>`;
+    document.body.appendChild(box);
+    document.getElementById('fatal-close').onclick=()=>box.remove();
   }
 
   // ===== DOM refs =====
@@ -48,9 +62,8 @@ class TileCatalog {
   }
 
   // ===== Data =====
-  async loadData(){ try{ const url=`${this.config.csvUrl}&_cachebust=${Date.now()}`; const r=await fetch(url,{headers:{Accept:'text/csv,application/csv,text/plain','Cache-Control':'no-cache'},cache:'no-store'}); if(!r.ok) throw new Error('http'); const csv=await r.text(); if(csv.length<50) throw new Error('short'); this.parseCSVData(csv); }catch{ this.loadDemoData(); } }
-  parseCSVData(csv){ try{ const wb=XLSX.read(csv,{type:'string'}); const ws=wb.Sheets[wb.SheetNames[0]]; const rows=XLSX.utils.sheet_to_json(ws,{header:1}); if(rows.length<2) throw new Error('no rows'); this.state.products=rows.slice(1).filter(r=>r&&r.length>0).map(r=>({ id:this.generateId(), name:this.cleanString(this.getString(r[0]))||'Без названия', brand:this.cleanString(this.getString(r[1]))||'Неизвестно', color:this.cleanString(this.getString(r[2]))||'Не указан', price:this.getNumber(r[3])||0, description:this.cleanString(this.getString(r[4]))||'', image:this.getString(r[5])||'', phone:this.getString(r[6])||this.config.phoneFallback, inStock:this.getBoolean(r[7]), onDemand:this.getBoolean(r[8]), hidden:this.getBoolean(r[9]) })).filter(p=>(p.inStock||p.onDemand)&&!p.hidden&&p.name!=='Без названия'); }catch{ this.loadDemoData(); } }
-  loadDemoData(){ this.state.products=[{id:'demo-1',name:'Marble Effect',brand:'Luxury Line',color:'Золотистый',price:3200,description:'Эффект мраморной поверхности',image:'',phone:this.config.phoneFallback,inStock:true,onDemand:false,hidden:false},{id:'demo-2',name:'Mosaic Pattern',brand:'Art Collection',color:'Многоцветный',price:2800,description:'Мозаичный узор для акцентных стен',image:'',phone:this.config.phoneFallback,inStock:true,onDemand:false,hidden:false},{id:'demo-3',name:'Natural Stone Look',brand:'Natural Design',color:'Бежевый',price:2100,description:'Имитация натурального камня',image:'',phone:this.config.phoneFallback,inStock:true,onDemand:false,hidden:false},{id:'demo-4',name:'Industrial Style',brand:'Loft Design',color:'Металлик',price:1950,description:'Промышленный стиль для современных интерьеров',image:'',phone:this.config.phoneFallback,inStock:false,onDemand:true,hidden:false},{id:'demo-5',name:'Vintage Pattern',brand:'Retro Style',color:'Серый',price:1890,description:'Винтажная плитка с уникальным узором',image:'',phone:this.config.phoneFallback,inStock:true,onDemand:false,hidden:false},{id:'demo-6',name:'Hexagon Modern',brand:'Geometric',color:'Синий',price:1650,description:'Современная шестигранная плитка',image:'',phone:this.config.phoneFallback,inStock:true,onDemand:false,hidden:false},{id:'demo-7',name:'Wood Look Classic',brand:'Traditional',color:'Коричневый',price:1450,description:'Классическая плитка под дерево',image:'',phone:this.config.phoneFallback,inStock:true,onDemand:false,hidden:false},{id:'demo-8',name:'Metro Tiles',brand:'Urban Collection',color:'Белый',price:1200,description:'Плитка в стиле метро',image:'',phone:this.config.phoneFallback,inStock:true,onDemand:false,hidden:false},{id:'demo-9',name:'Stone Texture',brand:'Nature Plus',color:'Кремовый',price:980,description:'Текстура натурального камня',image:'',phone:this.config.phoneFallback,inStock:true,onDemand:false,hidden:false}]; }
+  async loadData(){ const url=`${this.config.csvUrl}&_cachebust=${Date.now()}`; const r=await fetch(url,{headers:{Accept:'text/csv,application/csv,text/plain','Cache-Control':'no-cache'},cache:'no-store'}); if(!r.ok) throw new Error(`HTTP ${r.status}`); const csv=await r.text(); if(csv.length<50) throw new Error('Пустой ответ от источника'); this.parseCSVData(csv); }
+  parseCSVData(csv){ const wb=XLSX.read(csv,{type:'string'}); const ws=wb.Sheets[wb.SheetNames[0]]; const rows=XLSX.utils.sheet_to_json(ws,{header:1}); if(rows.length<2) throw new Error('В таблице нет строк с данными'); this.state.products=rows.slice(1).filter(r=>r&&r.length>0).map(r=>({ id:this.generateId(), name:this.cleanString(this.getString(r[0]))||'Без названия', brand:this.cleanString(this.getString(r[1]))||'Неизвестно', color:this.cleanString(this.getString(r[2]))||'Не указан', price:this.getNumber(r[3])||0, description:this.cleanString(this.getString(r[4]))||'', image:this.getString(r[5])||'', phone:this.getString(r[6])||this.config.phoneFallback, inStock:this.getBoolean(r[7]), onDemand:this.getBoolean(r[8]), hidden:this.getBoolean(r[9]) })).filter(p=>(p.inStock||p.onDemand)&&!p.hidden&&p.name!=='Без названия'); }
 
   // ===== Filters init (after data) =====
   initFilters(){ const brands=[...new Set(this.state.products.map(p=>p.brand))].sort(); const colors=[...new Set(this.state.products.map(p=>p.color))].sort(); if(this.elements.brandFilters){ this.elements.brandFilters.innerHTML=brands.map(b=>this.createCheckboxFilter('brand',b)).join(''); this.elements.brandFilters.addEventListener('change',e=>{ if(e.target.type==='checkbox'){ e.target.checked?this.state.filters.brands.add(e.target.value):this.state.filters.brands.delete(e.target.value); this.applyFilters(); this.renderProducts(); } }); } if(this.elements.colorFilters){ this.elements.colorFilters.innerHTML=colors.map(c=>this.createCheckboxFilter('color',c)).join(''); this.elements.colorFilters.addEventListener('change',e=>{ if(e.target.type==='checkbox'){ e.target.checked?this.state.filters.colors.add(e.target.value):this.state.filters.colors.delete(e.target.value); this.applyFilters(); this.renderProducts(); } }); } const prices=this.state.products.map(p=>p.price).filter(Number.isFinite); const max=prices.length?Math.max(...prices):0; this.state.filters.priceMin=0; this.state.filters.priceMax=max; if(this.elements.priceRange){ this.elements.priceRange.max=String(max); this.elements.priceRange.value=String(max); } if(this.elements.priceMax) this.elements.priceMax.value=String(max); if(this.elements.priceMin) this.elements.priceMin.value='0'; }
@@ -60,20 +73,19 @@ class TileCatalog {
   renderProducts(){ if(!this.elements.productsGrid) return; this.sortProducts(); this.updateResultsCount(); if(this.state.filteredProducts.length===0){ this.showNoResults(); return; } this.hideNoResults(); this.elements.productsGrid.innerHTML=this.state.filteredProducts.map(p=>this.createProductCard(p)).join(''); }
   sortProducts(){ const s=this.state.sort; const t=(a,b)=>a.localeCompare(b,'ru',{sensitivity:'base'}); const n=(a,b)=>a-b; this.state.filteredProducts.sort((a,b)=>{ if(s==='price-asc') return n(a.price,b.price); if(s==='price-desc') return n(b.price,a.price); if(s==='name-asc') return t(a.name,b.name); if(s==='name-desc') return t(b.name,a.name); return 0; }); }
 
-  // ===== UI helpers etc. (оставлены без изменений) =====
-  createCheckboxFilter(t,v){ const id=`${t}-${v.replace(/\s+/g,'-').toLowerCase()}`; return `<div class="checkbox-item"><input type="checkbox" id="${id}" value="${v}"><label for="${id}" class="checkbox-text">${v}</label></div>`; }
+  // ===== Helpers =====
+  createCheckboxFilter(t,v){ const id=`${t}-${v.replace(/\s+/g,'-').toLowerCase()}`; return `<div class=\"checkbox-item\"><input type=\"checkbox\" id=\"${id}\" value=\"${v}\"><label for=\"${id}\" class=\"checkbox-text\">${v}</label></div>`; }
   showNoResults(){ this.elements.noResults?.classList.remove('hidden'); if(this.elements.productsGrid) this.elements.productsGrid.innerHTML=''; }
   hideNoResults(){ this.elements.noResults?.classList.add('hidden'); }
   updateResultsCount(){ if(this.elements.resultsCount){ const total=this.state.products.length; const filtered=this.state.filteredProducts.length; this.elements.resultsCount.textContent=`Найдено товаров: ${filtered} из ${total}`; } }
   changeViewMode(n){ const next=n===1?1:2; this.state.viewMode=next; this.updateViewButtons(); this.updateGridClass(); localStorage.setItem('viewMode',String(next)); }
-  updateViewButtons(){ document.querySelectorAll('.view-btn').forEach(b=>{ b.classList.remove('active'); b.setAttribute('aria-pressed','false'); }); const a=document.querySelector(`[data-columns="${this.state.viewMode}"]`); a?.classList.add('active'); a?.setAttribute('aria-pressed','true'); }
+  updateViewButtons(){ document.querySelectorAll('.view-btn').forEach(b=>{ b.classList.remove('active'); b.setAttribute('aria-pressed','false'); }); const a=document.querySelector(`[data-columns=\"${this.state.viewMode}\"]`); a?.classList.add('active'); a?.setAttribute('aria-pressed','true'); }
   updateGridClass(){ if(!this.elements.productsGrid) return; this.elements.productsGrid.classList.remove('grid-1','grid-2'); this.elements.productsGrid.classList.add(`grid-${this.state.viewMode}`); }
 
-  // Contact modal, Product modal, accessibility helpers — без изменений в этой правке
-  openContactModal(p){ /* ... остаётся как в текущей ветке ... */ }
-  openProductModal(p){ /* ... остаётся как в текущей ветке ... */ }
+  // Product/Contact modals остаются прежними
+  openProductModal(p){ /* ... */ }
+  openContactModal(p){ /* ... */ }
 
-  // Utils
   hideLoadingScreen(){ if(this.elements.loadingScreen){ this.elements.loadingScreen.style.opacity='0'; setTimeout(()=>{ this.elements.loadingScreen.style.display='none'; },300);} }
   getString(v){ return v?String(v).trim():''; } getNumber(v){ const n=parseFloat(v); return isNaN(n)?0:n; } getBoolean(v){ if(typeof v==='boolean') return v; if(typeof v==='string'){ const l=v.toLowerCase().trim(); return l==='true'||l==='1'||l==='да'||l==='yes'; } return Boolean(v); } generateId(){ return 'product-'+Math.random().toString(36).slice(2,11); }
 }
