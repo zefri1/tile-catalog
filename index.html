@@ -6,6 +6,12 @@
     <title>Каталог плитки - Плиточник</title>
     <meta name="description" content="Профессиональный каталог плитки. Керамическая плитка, керамогранит, мозаика. Широкий выбор цветов и размеров.">
     
+    <!-- Emergency CSS for safe image scaling -->
+    <style>
+    img, svg, picture, video { max-width: 100% !important; height: auto !important; object-fit: contain !important; }
+    .logo-circle img, .icon-vk { max-width: 100% !important; max-height: 100% !important; }
+    </style>
+    
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,8 +20,8 @@
     <!-- XLSX library via CDN (kept for runtime parsing) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
     
-    <!-- Styles -->
-    <link rel="stylesheet" href="styles.css">
+    <!-- Styles: src/styles.css will be processed by Vite -->
+    <link rel="stylesheet" href="/src/styles.css">
 </head>
 <body>
     <!-- Loading Screen -->
@@ -127,6 +133,7 @@
                             <select id="sort-select" class="sort-select">
                                 <option value="price-asc">По цене ↑</option>
                                 <option value="price-desc">По цене ↓</option>
+                                <option value="price-desc">По цене ↓</option>
                                 <option value="name-asc">По названию А-Я</option>
                                 <option value="name-desc">По названию Я-А</option>
                             </select>
@@ -216,8 +223,8 @@
       </div>
     </div>
 
-    <!-- Scripts (ES Modules for Vite) -->
-    <script type="module" src="catalog.js"></script>
-    <script type="module" src="main.js"></script>
+    <!-- Scripts: src paths for Vite processing -->
+    <script type="module" src="/src/catalog.js"></script>
+    <script type="module" src="/src/main.js"></script>
 </body>
 </html>
