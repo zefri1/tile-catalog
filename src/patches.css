@@ -1,36 +1,43 @@
-/* Controls box tightened */
-.controls-box{display:flex;align-items:center;gap:.75rem;padding:.5rem .75rem;background:var(--color-surface-elevated);border:1px solid var(--color-border);border-radius:12px;justify-content:space-between;margin:.5rem 0}
-.sort-select{height:36px}
-.view-buttons{padding:.25rem}
-.results-info{opacity:.7}
+/* Mobile polish: header, toolbar, grid gaps, badges, result counter */
 
-/* Card density & equal height */
-.products-grid{display:grid;gap:1rem;padding:.5rem 0;grid-auto-rows:1fr}
-.product-card{min-height:360px}
-.product-image{aspect-ratio:1/1}
-.product-info{display:flex;flex-direction:column;gap:.4rem}
-.product-price{margin-top:auto}
-.product-contact-btn{margin-top:.6rem}
-
-/* Badge compact */
-.status-badge{padding:.18rem .45rem;font-size:.68rem;border-radius:999px}
-
-/* Header compact */
-.header-content{padding:.75rem 0}
-
-/* Modal buttons balance */
-.modal__actions .btn{min-height:40px}
-
-/* Mobile fixes */
+/* Header compact on mobile */
 @media (max-width: 768px){
-  .header-actions{gap:.4rem}
-  .controls-box{flex-wrap:wrap;gap:.5rem}
-  .sort-control{width:100%}
-  .view-controls{margin-left:auto}
-  .products-grid{grid-template-columns:1fr}
-  .products-grid.grid-2{grid-template-columns:1fr 1fr}
+  .brand-info h1{font-size:1.1rem}
+  .brand-tagline{display:none}
+  .header-actions{gap:.35rem}
+  .action-btn{width:40px;height:40px}
+}
+
+/* Toolbar layout: 2 rows on mobile, tighter paddings */
+@media (max-width: 768px){
+  .controls-box{padding:.45rem .6rem;gap:.5rem;row-gap:.4rem}
+  .sort-control{flex:1}
+  .sort-select{width:100%}
+  .view-controls{margin-left:0}
+  .results-info{font-size:.85rem}
+}
+
+/* Results inline counter align right on mobile */
+@media (max-width: 768px){
+  .controls-right{margin-left:auto}
+}
+
+/* Grid: reduce gap and card min-height on narrow screens */
+@media (max-width: 768px){
+  .products-grid{gap:.8rem}
+  .product-card{min-height:330px}
 }
 @media (max-width: 420px){
-  .products-grid.grid-2{grid-template-columns:1fr}
-  .view-buttons{display:none}
+  .products-grid{gap:.65rem}
+  .product-card{min-height:310px}
+}
+
+/* Badges and price readability */
+.status-badge{letter-spacing:.02em}
+.product-price{font-size:1.15rem}
+
+/* Filters panel spacing on mobile */
+@media (max-width: 768px){
+  .filters-panel{border-radius:10px}
+  .filters-content{padding:.75rem}
 }
