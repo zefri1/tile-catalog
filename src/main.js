@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
       collapsible.classList.remove('open');
       collapsible.style.maxHeight = '0px';
       collapsible.style.opacity = '0';
-      collapsible.style.display = '';
+      collapsible.style.display = 'none';
       if(toggle) toggle.checked = false;
     }
   }
@@ -29,35 +29,54 @@ document.addEventListener('DOMContentLoaded', () => {
   function setOpen(open){
     if(!collapsible) return;
     
-    collapsible.classList.toggle('open', open);
-    
     if(open){
       collapsible.style.display = 'block';
       // Force reflow before measuring
       collapsible.offsetHeight;
-      // Measure actual height
+      // Add class and measure
+      collapsible.classList.add('open');
+      // Measure actual height after content is rendered
       const h = collapsible.scrollHeight;
       collapsible.style.maxHeight = h + 'px';
       collapsible.style.opacity = '1';
     } else {
+      collapsible.classList.remove('open');
       collapsible.style.maxHeight = '0px';
       collapsible.style.opacity = '0';
       // Wait for animation to complete before hiding
       setTimeout(() => {
         if(!collapsible.classList.contains('open')) {
-          collapsible.style.display = '';
+          collapsible.style.display = 'none';
         }
       }, 300);
     }
   }
 
-  // Toggle button event
+  // Toggle button event - IMPROVED
   if(toggle){
     toggle.addEventListener('change', (e) => {
       e.preventDefault();
       e.stopPropagation();
+      console.log('Filter toggle clicked:', toggle.checked); // Debug
       setOpen(toggle.checked);
     });
+    
+    // Also handle clicks on the label
+    const chip = document.querySelector('.filters-toggle-chip');
+    if(chip) {
+      chip.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('Filter chip clicked'); // Debug
+        toggle.checked = !toggle.checked;
+        setOpen(toggle.checked);
+      });
+      
+      // Prevent double handling
+      chip.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+      }, { passive: false });
+    }
   }
 
   // Close by outside click (mobile only)
@@ -127,7 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
       mountPanel();
       
       // Recalculate collapsible height if open
-      if(isMobile() && toggle && toggle.checked && collapsible) {
+      if(isMobile() && toggle && toggle.checked && collapsible && collapsible.classList.contains('open')) {
         const h = collapsible.scrollHeight;
         collapsible.style.maxHeight = h + 'px';
       }
@@ -140,5 +159,14 @@ document.addEventListener('DOMContentLoaded', () => {
       toggle.checked = false;
       setOpen(false);
     }
+  });
+
+  // Debug: Log initial state
+  console.log('Mobile filter setup complete:', {
+    toggle: !!toggle,
+    collapsible: !!collapsible,
+    sidebar: !!sidebar,
+    panel: !!panel,
+    isMobile: isMobile()
   });
 });
