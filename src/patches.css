@@ -1,20 +1,12 @@
-/* Final stability patch */
-
-/* Strict breakpoints */
+/* Mobile polish: align toolbar and grid */
 @media (max-width: 768px){
-  .catalog-layout{grid-template-columns:1fr!important}
-  #filters-sidebar{display:none!important}
-  .products-toolbar{display:grid!important}
-}
-@media (min-width: 769px){
-  #filters-collapsible{display:none!important}
+  .products-toolbar{margin-top:.25rem}
+  .controls-box{margin-top:.5rem}
+  .sort-select{min-width:180px}
+  .view-controls{margin-left:auto}
+  .products-grid{gap:1rem}
 }
 
-/* Collapsible container fixed height transition */
-#filters-collapsible{overflow:hidden;max-height:0;transition:max-height .3s ease}
-#filters-collapsible.open{max-height:520px}
-
-/* Checkbox scroll area height for mobile */
-@media (max-width: 768px){
-  .checkbox-group{max-height:160px}
-}
+/* Fix badge contrast in dark theme */
+[data-theme="dark"] .status-on-demand{background:rgba(245,158,11,.18);color:#f6c453}
+[data-theme="dark"] .status-in-stock{background:rgba(16,185,129,.18);color:#39d3a2}
