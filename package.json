@@ -11,7 +11,8 @@
     "render-build": "npm ci && npm run build"
   },
   "dependencies": {
-    "vite": "^6.0.0"
+    "vite": "^6.0.0",
+    "terser": "^5.36.0"
   },
   "engines": {
     "node": ">=18.0.0",
