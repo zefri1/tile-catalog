@@ -1,12 +1,6 @@
-/* Mobile polish: align toolbar and grid */
-@media (max-width: 768px){
-  .products-toolbar{margin-top:.25rem}
-  .controls-box{margin-top:.5rem}
-  .sort-select{min-width:180px}
-  .view-controls{margin-left:auto}
-  .products-grid{gap:1rem}
-}
+/* Collapsible improvements to ensure open/close works reliably */
+#filters-collapsible{overflow:hidden;max-height:0;transition:max-height .28s ease, opacity .2s ease;opacity:0}
+#filters-collapsible.open{display:block;max-height:600px;opacity:1}
 
-/* Fix badge contrast in dark theme */
-[data-theme="dark"] .status-on-demand{background:rgba(245,158,11,.18);color:#f6c453}
-[data-theme="dark"] .status-in-stock{background:rgba(16,185,129,.18);color:#39d3a2}
+/* Ensure panel gets proper padding when mounted inside collapsible */
+#filters-collapsible .filters-panel{margin-top:.5rem}
