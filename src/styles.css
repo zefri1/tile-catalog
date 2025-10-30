@@ -1,10 +1,6 @@
 /**
  * Каталог плитки - Современные стили
  * Полный рефакторинг 2025
- * 
- * ВНИМАНИЕ: НЕ ИСПОЛЬЗОВАТЬ УСТАРЕВШИЕ WEBKIT-PREFIXES!
- * -webkit-line-clamp, -webkit-box-orient - устарели
- * Используем только современные CSS решения
  */
 
 /* ===== CSS переменные ===== */
@@ -261,8 +257,9 @@ input, button, textarea, select {
 .sort-select{height:36px;padding:0 1.8rem 0 .6rem;border:1px solid var(--color-border);border-radius:var(--border-radius-sm);background:var(--color-surface);color:var(--color-text);font-size:.8rem;cursor:pointer;appearance:none;background-image:url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");background-repeat:no-repeat;background-position:right .6rem center;background-size:14px;transition:all var(--transition-fast)}
 .sort-select:focus{outline:none;border-color:var(--color-primary);box-shadow:0 0 0 2px rgba(247,199,65,.1)}
 
+/* ===== Карточки товаров ===== */
 .products-grid{display:grid;gap:1.5rem;padding:.5rem 0;justify-items:stretch;align-items:stretch;grid-auto-rows:1fr}
-.product-card{background:var(--color-surface-elevated);border:1px solid var(--color-border);border-radius:var(--border-radius);overflow:hidden;transition:all var(--transition-normal);cursor:pointer;position:relative;display:flex;flex-direction:column;height:auto;box-shadow:var(--shadow-card);animation:fadeInUp .6s ease-out forwards;opacity:0;transform:translateY(20px)}
+.product-card{background:var(--color-surface-elevated);border:1px solid var(--color-border);border-radius:var(--border-radius);overflow:hidden;transition:all var(--transition-normal);position:relative;display:flex;flex-direction:column;height:auto;box-shadow:var(--shadow-card);animation:fadeInUp .6s ease-out forwards;opacity:0;transform:translateY(20px)}
 .product-card:hover{transform:translateY(-4px);border-color:var(--color-primary);box-shadow:var(--shadow-card-hover),0 0 0 1px rgba(247,199,65,.1)}
 .product-card:nth-child(1){animation-delay:.1s}.product-card:nth-child(2){animation-delay:.2s}.product-card:nth-child(3){animation-delay:.3s}.product-card:nth-child(4){animation-delay:.4s}
 @keyframes fadeInUp{to{opacity:1;transform:translateY(0)}}
@@ -280,6 +277,31 @@ input, button, textarea, select {
 .status-badge{padding:.25rem .5rem;border-radius:15px;font-size:.7rem;font-weight:600;line-height:1;text-transform:uppercase;letter-spacing:.05em}
 .status-in-stock{background:rgba(16,185,129,.1);color:var(--color-success)}
 .status-on-demand{background:rgba(245,158,11,.1);color:var(--color-warning)}
+
+/* ===== Кнопка связаться на карточке ===== */
+.product-contact-btn {
+  margin-top: .75rem;
+  padding: .6rem 1rem;
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  color: var(--color-text);
+  border: none;
+  border-radius: var(--border-radius-sm);
+  font-weight: 600;
+  font-size: .85rem;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: 0 2px 8px rgba(247, 199, 65, 0.2);
+  width: 100%;
+}
+
+.product-contact-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(247, 199, 65, 0.3);
+}
+
+.product-contact-btn:active {
+  transform: translateY(0);
+}
 
 .no-results{display:flex;align-items:center;justify-content:center;padding:3rem 1.5rem;text-align:center}
 .no-results-content{max-width:350px}
@@ -344,9 +366,12 @@ input, button, textarea, select {
 .modal__meta .meta-item{font-size:.9rem;color:var(--color-text-secondary)}
 .modal__meta .meta-item span{opacity:.8;margin-right:.25rem}
 .modal__desc{font-size:.95rem;color:var(--color-text);line-height:1.5}
-.modal__actions{margin-top:auto;display:flex;gap:.6rem}
-.btn{padding:.7rem 1rem;border-radius:var(--border-radius-sm);border:1px solid var(--color-border);background:var(--color-surface);color:var(--color-text);cursor:pointer;transition:.15s}
+.modal__actions{margin-top:auto;display:flex;gap:.6rem;flex-wrap:wrap}
+.btn{padding:.7rem 1rem;border-radius:var(--border-radius-sm);border:1px solid var(--color-border);background:var(--color-surface);color:var(--color-text);cursor:pointer;transition:.15s;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;font-weight:500;font-size:.9rem}
 .btn:hover{background:var(--color-border-light)}
 .btn-primary{background:linear-gradient(135deg,var(--color-primary) 0%,var(--color-primary-dark) 100%);border:none;color:var(--color-text);box-shadow:0 2px 8px rgba(247,199,65,.2)}
 .btn-primary:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(247,199,65,.3)}
-@media (max-width:960px){.modal__dialog{height:94vh;margin:2vh auto}.modal__content{grid-template-columns:1fr;grid-template-rows:48% 52%}.modal__media{border-right:0;border-bottom:1px solid var(--color-border)}}
+.btn-secondary{background:linear-gradient(135deg,#5865f2 0%,#4752c4 100%);border:none;color:white;box-shadow:0 2px 8px rgba(88,101,242,.2)}
+.btn-secondary:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(88,101,242,.3);background:linear-gradient(135deg,#4752c4 0%,#3c4798 100%)}
+@media (max-width:960px){.modal__dialog{height:94vh;margin:2vh auto}.modal__content{grid-template-columns:1fr;grid-template-rows:48% 52%}.modal__media{border-right:0;border-bottom:1px solid var(--color-border)}.modal__actions{flex-direction:column}}
+@media (max-width:480px){.modal__actions .btn{width:100%;justify-content:center}}
