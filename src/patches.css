@@ -3,7 +3,7 @@
   /* desktop sidebar hidden on mobile */
   #filters-sidebar{display:none!important}
   /* show mobile toolbar */
-  .products-toolbar{display:grid!important}
+  .products-toolbar{display:block!important}
 }
 @media (min-width: 769px){
   /* mobile collapsible hidden on desktop */
@@ -12,23 +12,77 @@
   .products-toolbar{display:none!important}
 }
 
-/* Collapsible animation */
+/* Fix filters button functionality */
+@media (max-width: 768px) {
+  .filters-toggle {
+    display: none;
+  }
+  
+  .filters-toggle + .filters-toggle-chip {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--border-radius-sm);
+    background: var(--color-surface);
+    color: var(--color-text);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    font-weight: 500;
+    font-size: 0.9rem;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  .filters-toggle + .filters-toggle-chip:hover {
+    background: var(--color-border-light);
+    transform: translateY(-1px);
+  }
+  
+  .filters-toggle + .filters-toggle-chip:active {
+    transform: translateY(0);
+  }
+  
+  .filters-toggle:checked + .filters-toggle-chip {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: var(--color-text);
+    box-shadow: var(--shadow-sm);
+  }
+  
+  .filters-toggle + .filters-toggle-chip .filters-chevron {
+    transition: transform var(--transition-fast);
+    flex-shrink: 0;
+  }
+  
+  .filters-toggle:checked + .filters-toggle-chip .filters-chevron {
+    transform: rotate(180deg);
+  }
+}
+
+/* Collapsible animation - IMPROVED */
 #filters-collapsible{
-  overflow:hidden;
-  max-height:0;
-  opacity:0;
-  transition:max-height .28s ease,opacity .2s ease;
+  display: none;
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transition: max-height 0.3s ease-out, opacity 0.2s ease-out;
   background: var(--color-surface-elevated);
   border: 1px solid var(--color-border);
   border-radius: var(--border-radius);
   margin-bottom: 1rem;
 }
+
 #filters-collapsible.open{
-  max-height:800px;
-  opacity:1;
+  display: block;
+  max-height: 1000px;
+  opacity: 1;
 }
 
-/* Mobile toolbar improvements */
+/* Mobile controls layout - FIXED to single row */
 @media (max-width: 768px){
   .products-toolbar{
     padding: 1rem;
@@ -43,32 +97,89 @@
     font-size: 0.9rem;
   }
   
+  /* MAIN FIX: Controls in single row */
   .controls-box{
     margin-top: 0.5rem;
     padding: 0.75rem 1rem;
-    flex-wrap: wrap;
-    gap: 0.75rem;
+    display: flex;
+    flex-direction: row !important; /* Force row layout */
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
   }
   
   .sort-control{
-    min-width: 180px;
-    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 0 0 auto;
+  }
+  
+  .sort-label {
+    white-space: nowrap;
+    font-size: 0.8rem;
   }
   
   .sort-select{
     min-width: 140px;
-    flex: 1;
+    width: 140px;
   }
   
   .view-controls{
-    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 0 0 auto;
   }
   
+  .view-label {
+    white-space: nowrap;
+    font-size: 0.8rem;
+  }
+  
+  /* Results count below controls */
   .results-info{
     width: 100%;
     text-align: center;
-    margin-top: 0.5rem;
+    margin-top: 0.75rem;
     font-size: 0.85rem;
+    order: 10; /* Ensure it appears last */
+  }
+  
+  /* Ensure controls wrapper allows proper layout */
+  .controls-box {
+    flex-wrap: wrap;
+  }
+  
+  .controls-box > .sort-control,
+  .controls-box > .view-controls {
+    flex-wrap: nowrap;
+  }
+}
+
+/* Even smaller screens - stack vertically only if absolutely necessary */
+@media (max-width: 420px){
+  .controls-box{
+    flex-direction: column !important;
+    gap: 0.75rem;
+    align-items: stretch;
+  }
+  
+  .sort-control,
+  .view-controls{
+    justify-content: center;
+  }
+  
+  .sort-select {
+    min-width: 120px;
+    width: auto;
+    flex: 1;
+  }
+  
+  .results-info{
+    margin-top: 0.5rem;
+    order: initial;
   }
 }
 
@@ -85,23 +196,6 @@
   .action-btn{
     width: 40px;
     height: 40px;
-  }
-  
-  .controls-box{
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-  
-  .sort-control{
-    min-width: auto;
-  }
-  
-  .view-controls{
-    margin: 0 auto;
-  }
-  
-  .results-info{
-    margin-top: 0;
   }
 }
 
