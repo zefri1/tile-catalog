@@ -1,43 +1,8 @@
-/* Mobile polish: header, toolbar, grid gaps, badges, result counter */
+/* Collapsible filters animation */
+.filters-collapsible{display:none;overflow:hidden;max-height:0;transition:max-height .3s ease}
+.filters-collapsible.open{display:block}
 
-/* Header compact on mobile */
+/* On mobile, show collapsible block below toolbar */
 @media (max-width: 768px){
-  .brand-info h1{font-size:1.1rem}
-  .brand-tagline{display:none}
-  .header-actions{gap:.35rem}
-  .action-btn{width:40px;height:40px}
-}
-
-/* Toolbar layout: 2 rows on mobile, tighter paddings */
-@media (max-width: 768px){
-  .controls-box{padding:.45rem .6rem;gap:.5rem;row-gap:.4rem}
-  .sort-control{flex:1}
-  .sort-select{width:100%}
-  .view-controls{margin-left:0}
-  .results-info{font-size:.85rem}
-}
-
-/* Results inline counter align right on mobile */
-@media (max-width: 768px){
-  .controls-right{margin-left:auto}
-}
-
-/* Grid: reduce gap and card min-height on narrow screens */
-@media (max-width: 768px){
-  .products-grid{gap:.8rem}
-  .product-card{min-height:330px}
-}
-@media (max-width: 420px){
-  .products-grid{gap:.65rem}
-  .product-card{min-height:310px}
-}
-
-/* Badges and price readability */
-.status-badge{letter-spacing:.02em}
-.product-price{font-size:1.15rem}
-
-/* Filters panel spacing on mobile */
-@media (max-width: 768px){
-  .filters-panel{border-radius:10px}
-  .filters-content{padding:.75rem}
+  #filters-collapsible .filters-panel{margin-top:.5rem}
 }
