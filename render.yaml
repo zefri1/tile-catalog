@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: tile-catalog
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: 18
+    staticPublishPath: ./dist
