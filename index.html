@@ -1,27 +1,16 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Каталог плитки - Плиточник</title>
-    <meta name="description" content="Профессиональный каталог плитки. Керамическая плитка, керамогранит, мозаика. Широкий выбор цветов и размеров.">
-    
-    <!-- Emergency CSS for safe image scaling -->
-    <style>
-    img, svg, picture, video { max-width: 100% !important; height: auto !important; object-fit: contain !important; }
-    .logo-circle img, .icon-vk { max-width: 100% !important; max-height: 100% !important; }
-    </style>
-    
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300..900;1,14..32,300..900&family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700;1,800&display=swap" rel="stylesheet">
-    
-    <!-- XLSX library via CDN (kept for runtime parsing) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
-    
-    <!-- Styles: src/styles.css will be processed by Vite -->
-    <link rel="stylesheet" href="/src/styles.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Каталог плитки - Плиточник</title>
+  <meta name="description" content="Профессиональный каталог плитки. Керамическая плитка, керамогранит, мозаика. Широкий выбор цветов и размеров.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300..900;1,14..32,300..900&family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700;1,800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/src/styles.css">
+  <link rel="stylesheet" href="/src/patches.css">
+  <script>window.SHEET_CSV_URL='https://docs.google.com/spreadsheets/d/e/2PACX-1vRfhgka5nFoR1TXYDGQ5CziYYqGSDXjhw_yJeO-MqFTb-k_RWlkjvaWxy9vBzLuKmo4KdCnz2SAdvMh/pub?gid=0&single=true&output=csv';</script>
 </head>
 <body>
     <!-- Loading Screen -->
@@ -133,7 +122,6 @@
                             <select id="sort-select" class="sort-select">
                                 <option value="price-asc">По цене ↑</option>
                                 <option value="price-desc">По цене ↓</option>
-                                <option value="price-desc">По цене ↓</option>
                                 <option value="name-asc">По названию А-Я</option>
                                 <option value="name-desc">По названию Я-А</option>
                             </select>
@@ -215,7 +203,8 @@
             </div>
             <p id="modal-desc" class="modal__desc"></p>
             <div class="modal__actions">
-              <a href="https://vk.com/plitochik44" target="_blank" class="btn btn-primary">Связаться</a>
+              <a id="modal-vk-btn" href="https://vk.com/plitochik44" target="_blank" class="btn btn-secondary">💬 VK</a>
+              <a id="modal-phone-btn" href="tel:+74951234567" class="btn btn-primary">📞 +7 (495) 123-45-67</a>
               <button type="button" class="btn" id="modal-close-btn">Закрыть</button>
             </div>
           </div>
