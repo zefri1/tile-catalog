@@ -25,7 +25,7 @@ export default defineConfig({
   },
   css: { devSourcemap: false },
   preview: { port: process.env.PORT || 4173, host: '0.0.0.0', strictPort: false, open: false },
-  // Важно: не включаем xlsx в optimizeDeps/manualChunks, т.к. библиотека подключается через CDN и доступна как window.XLSX
+  // Нативный CSV парсер - внешние зависимости больше не нужны
   optimizeDeps: { include: [] },
   define: {
     __APP_VERSION__: JSON.stringify(process.env.npm_package_version || '1.0.0'),
