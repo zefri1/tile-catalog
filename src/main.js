@@ -4,169 +4,86 @@ document.addEventListener('DOMContentLoaded', () => {
   const sidebar = document.getElementById('filters-sidebar');
   const panel = sidebar ? sidebar.querySelector('.filters-panel') : null;
 
+  const chip = document.querySelector('.filters-toggle-chip');
+
   function isMobile(){ return window.matchMedia('(max-width: 768px)').matches; }
+
+  // Ensure aria attributes for accessibility and robust behavior
+  function syncAria(open){
+    if(chip){ chip.setAttribute('aria-expanded', String(open)); }
+    if(collapsible){ collapsible.setAttribute('aria-hidden', String(!open)); }
+  }
 
   // Move panel between containers based on viewport
   function mountPanel(){
     if(!panel || !collapsible || !sidebar) return;
     if(isMobile()){
-      if(!collapsible.contains(panel)) {
-        collapsible.appendChild(panel);
-      }
+      if(!collapsible.contains(panel)) collapsible.appendChild(panel);
+      // keep state consistent after move
+      syncAria(toggle && toggle.checked);
     } else {
-      if(!sidebar.contains(panel)) {
-        sidebar.appendChild(panel);
-      }
-      // Reset mobile state when switching to desktop
-      collapsible.classList.remove('open');
-      collapsible.style.maxHeight = '0px';
-      collapsible.style.opacity = '0';
-      collapsible.style.display = 'none';
-      if(toggle) toggle.checked = false;
+      if(!sidebar.contains(panel)) sidebar.appendChild(panel);
+      setOpen(false, true); // force close on desktop
     }
   }
 
-  function setOpen(open){
+  function setOpen(open, immediate=false){
     if(!collapsible) return;
-    
     if(open){
       collapsible.style.display = 'block';
-      // Force reflow before measuring
-      collapsible.offsetHeight;
-      // Add class and measure
+      // Force reflow
+      void collapsible.offsetHeight;
       collapsible.classList.add('open');
-      // Measure actual height after content is rendered
       const h = collapsible.scrollHeight;
-      collapsible.style.maxHeight = h + 'px';
+      collapsible.style.maxHeight = immediate ? 'none' : h + 'px';
       collapsible.style.opacity = '1';
     } else {
       collapsible.classList.remove('open');
       collapsible.style.maxHeight = '0px';
       collapsible.style.opacity = '0';
-      // Wait for animation to complete before hiding
-      setTimeout(() => {
-        if(!collapsible.classList.contains('open')) {
-          collapsible.style.display = 'none';
-        }
-      }, 300);
+      setTimeout(() => { if(!collapsible.classList.contains('open')) collapsible.style.display = 'none'; }, immediate ? 0 : 300);
     }
+    syncAria(open);
   }
 
-  // Toggle button event - IMPROVED
+  // Guard: if input is missing (some browsers strip hidden checkbox), rely only on chip
+  function toggleOpen(){
+    const newState = !(toggle ? toggle.checked : collapsible.classList.contains('open'));
+    if(toggle) toggle.checked = newState;
+    setOpen(newState);
+  }
+
+  // Bind events
   if(toggle){
-    toggle.addEventListener('change', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      console.log('Filter toggle clicked:', toggle.checked); // Debug
-      setOpen(toggle.checked);
-    });
-    
-    // Also handle clicks on the label
-    const chip = document.querySelector('.filters-toggle-chip');
-    if(chip) {
-      chip.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        console.log('Filter chip clicked'); // Debug
-        toggle.checked = !toggle.checked;
-        setOpen(toggle.checked);
-      });
-      
-      // Prevent double handling
-      chip.addEventListener('touchstart', (e) => {
-        e.preventDefault();
-      }, { passive: false });
-    }
+    toggle.addEventListener('change', (e) => { e.preventDefault(); e.stopPropagation(); setOpen(toggle.checked); });
+  }
+  if(chip){
+    chip.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); toggleOpen(); });
+    chip.addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' '){ e.preventDefault(); toggleOpen(); }});
   }
 
   // Close by outside click (mobile only)
   document.addEventListener('click', (e) => {
-    if(!isMobile() || !toggle || !toggle.checked) return;
-    
-    const chip = document.querySelector('.filters-toggle-chip');
-    const isInsideCollapsible = collapsible && collapsible.contains(e.target);
-    const isChipClick = chip && chip.contains(e.target);
-    
-    if(!isInsideCollapsible && !isChipClick) {
-      toggle.checked = false;
-      setOpen(false);
-    }
+    if(!isMobile() || !(toggle ? toggle.checked : collapsible.classList.contains('open'))) return;
+    const inside = collapsible.contains(e.target) || (chip && chip.contains(e.target));
+    if(!inside){ if(toggle) toggle.checked = false; setOpen(false); }
   });
 
-  // Prevent filter panel clicks from closing
-  if(collapsible) {
-    collapsible.addEventListener('click', (e) => {
-      e.stopPropagation();
-    });
-  }
+  // Prevent bubbling from panel
+  if(collapsible){ collapsible.addEventListener('click', (e)=> e.stopPropagation()); }
+
+  // ESC to close
+  document.addEventListener('keydown', (e)=>{ if(e.key==='Escape' && isMobile() && (toggle ? toggle.checked : collapsible.classList.contains('open'))) { if(toggle) toggle.checked=false; setOpen(false); }});
 
   // Theme toggle (persist)
   const themeBtn = document.getElementById('theme-toggle');
   const root = document.documentElement;
   const KEY = 'tile-theme';
-  
-  function applyTheme(mode) { 
-    root.setAttribute('data-theme', mode); 
-    localStorage.setItem(KEY, mode);
-    
-    // Update theme icon
-    if(themeBtn) {
-      const icon = themeBtn.querySelector('.theme-icon');
-      if(icon) {
-        icon.textContent = mode === 'dark' ? '☀️' : '🌙';
-      }
-    }
-  }
-  
-  // Load saved theme
-  const saved = localStorage.getItem(KEY);
-  if(saved) {
-    applyTheme(saved);
-  } else {
-    // Check system preference
-    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    applyTheme(prefersDark ? 'dark' : 'light');
-  }
-  
-  if(themeBtn) {
-    themeBtn.addEventListener('click', () => {
-      const currentTheme = root.getAttribute('data-theme');
-      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-      applyTheme(newTheme);
-    });
-  }
+  function applyTheme(mode){ root.setAttribute('data-theme', mode); localStorage.setItem(KEY, mode); const icon = themeBtn && themeBtn.querySelector('.theme-icon'); if(icon) icon.textContent = mode==='dark'?'☀️':'🌙'; }
+  const saved = localStorage.getItem(KEY); if(saved) applyTheme(saved); else applyTheme(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
+  if(themeBtn){ themeBtn.addEventListener('click', ()=> applyTheme(root.getAttribute('data-theme')==='dark'?'light':'dark')); }
 
   // Initialize and handle resize
   mountPanel();
-  
-  let resizeTimeout;
-  window.addEventListener('resize', () => {
-    clearTimeout(resizeTimeout);
-    resizeTimeout = setTimeout(() => {
-      mountPanel();
-      
-      // Recalculate collapsible height if open
-      if(isMobile() && toggle && toggle.checked && collapsible && collapsible.classList.contains('open')) {
-        const h = collapsible.scrollHeight;
-        collapsible.style.maxHeight = h + 'px';
-      }
-    }, 100);
-  });
-
-  // Handle escape key to close filters
-  document.addEventListener('keydown', (e) => {
-    if(e.key === 'Escape' && isMobile() && toggle && toggle.checked) {
-      toggle.checked = false;
-      setOpen(false);
-    }
-  });
-
-  // Debug: Log initial state
-  console.log('Mobile filter setup complete:', {
-    toggle: !!toggle,
-    collapsible: !!collapsible,
-    sidebar: !!sidebar,
-    panel: !!panel,
-    isMobile: isMobile()
-  });
+  let rid; window.addEventListener('resize', ()=>{ cancelAnimationFrame(rid); rid = requestAnimationFrame(()=>{ mountPanel(); if(isMobile() && (toggle ? toggle.checked : collapsible.classList.contains('open'))){ const h = collapsible.scrollHeight; collapsible.style.maxHeight = h + 'px'; } }); });
 });
