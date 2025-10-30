@@ -1,0 +1,22 @@
+/* Controls box tightened */
+.controls-box{display:flex;align-items:center;gap:.75rem;padding:.5rem .75rem;background:var(--color-surface-elevated);border:1px solid var(--color-border);border-radius:12px;justify-content:space-between;margin:.5rem 0}
+.sort-select{height:36px}
+.view-buttons{padding:.25rem}
+.results-info{opacity:.7}
+
+/* Card density & equal height */
+.products-grid{display:grid;gap:1rem;padding:.5rem 0;grid-auto-rows:1fr}
+.product-card{min-height:360px}
+.product-image{aspect-ratio:1/1}
+.product-info{display:flex;flex-direction:column;gap:.4rem}
+.product-price{margin-top:auto}
+.product-contact-btn{margin-top:.6rem}
+
+/* Badge compact */
+.status-badge{padding:.18rem .45rem;font-size:.68rem;border-radius:999px}
+
+/* Header compact */
+.header-content{padding:.75rem 0}
+
+/* Modal buttons balance */
+.modal__actions .btn{min-height:40px}
