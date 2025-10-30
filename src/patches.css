@@ -1,8 +1,20 @@
-/* Collapsible filters animation */
-.filters-collapsible{display:none;overflow:hidden;max-height:0;transition:max-height .3s ease}
-.filters-collapsible.open{display:block}
+/* Final stability patch */
 
-/* On mobile, show collapsible block below toolbar */
+/* Strict breakpoints */
 @media (max-width: 768px){
-  #filters-collapsible .filters-panel{margin-top:.5rem}
+  .catalog-layout{grid-template-columns:1fr!important}
+  #filters-sidebar{display:none!important}
+  .products-toolbar{display:grid!important}
+}
+@media (min-width: 769px){
+  #filters-collapsible{display:none!important}
+}
+
+/* Collapsible container fixed height transition */
+#filters-collapsible{overflow:hidden;max-height:0;transition:max-height .3s ease}
+#filters-collapsible.open{max-height:520px}
+
+/* Checkbox scroll area height for mobile */
+@media (max-width: 768px){
+  .checkbox-group{max-height:160px}
 }
