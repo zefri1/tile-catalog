@@ -2,6 +2,9 @@
     "name": "tile-catalog",
     "version": "1.0.0",
     "private": true,
+    server: {
+    allowedHosts: true
+    }
     "type": "module",
     "scripts": {
       "dev": "vite",
