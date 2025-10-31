@@ -22,18 +22,22 @@ function parseCSV(text) {
   return rows;
 }
 
-// Enhanced normalizer for multi-value fields
+// Enhanced normalizer for multi-value fields - FIXED for comma-separated values
 function normArray(raw) {
   if (!raw) return [];
   const str = String(raw).trim();
   if (!str || str === '0' || str === '-' || str.toLowerCase() === 'нет') return [];
   
+  // Split by comma and clean up each item
   return str
-    .split(/[;,|\n\r]+/)
-    .map(x => x.replace(/[-–—]/g, '').trim())
-    .filter(x => x && x.length > 0 && x.toLowerCase() !== 'нет' && x !== '0' && x !== '-')
-    .map(x => x.replace(/^[\s\-–—]+|[\s\-–—]+$/g, ''))
-    .filter(x => x.length > 0);
+    .split(/,/)
+    .map(x => x.trim())
+    .filter(x => x && x.length > 1 && x.toLowerCase() !== 'нет' && x !== '0' && x !== '-')
+    .map(x => {
+      // Clean up leading/trailing dashes and spaces
+      return x.replace(/^[\s\-–—]+|[\s\-–—]+$/g, '').trim();
+    })
+    .filter(x => x.length > 1); // Only keep meaningful categories
 }
 
 function s(v) { return v ? String(v).trim() : '' }
@@ -59,7 +63,7 @@ function parseCSVData(csvContent) {
     for (const pattern of patterns) {
       const index = headers.findIndex(h => h.includes(pattern.toLowerCase()));
       if (index !== -1) {
-        console.log(`Found category column at index ${index}: ${headers[index]}`);
+        console.log(`Found category column at index ${index}: "${headers[index]}"`);
         return index;
       }
     }
@@ -89,9 +93,15 @@ function parseCSVData(csvContent) {
   console.log('Column mapping:', col);
   
   const data = rows.slice(1).filter(r => r && r.length > 0);
-  return data.map((r, index) => {
+  let productsWithCategories = 0;
+  
+  const products = data.map((r, index) => {
     const rawCategory = col.itemcategory !== -1 ? r[col.itemcategory] : '';
     const categoryList = normArray(rawCategory);
+    
+    if (categoryList.length > 0) {
+      productsWithCategories++;
+    }
     
     const product = {
       id: s(r[col.id]) || 'product-' + Math.random().toString(36).slice(2, 11),
@@ -116,18 +126,22 @@ function parseCSVData(csvContent) {
       price: n(r[col.priceRozn]) || n(r[col.priceDiler]) || 0
     };
     
-    // Debug first few products
-    if (index < 5) {
+    // Debug first few products and some with categories
+    if (index < 5 || (categoryList.length > 0 && index < 20)) {
       console.log(`Product ${index}:`, {
-        rawCategory,
+        name: product.name,
+        rawCategory: `"${rawCategory}"`,
         itemCategory: product.itemCategory,
         itemCategoryList: product.itemCategoryList,
-        name: product.name
+        price: product.price
       });
     }
     
     return product;
   });
+  
+  console.log(`Total products parsed: ${products.length}, with categories: ${productsWithCategories}`);
+  return products;
 }
 
 class CategoryTree {
@@ -255,16 +269,30 @@ class TileCatalog {
     }
     
     let categoryCount = 0;
+    let productsWithCategories = 0;
+    
     this.products.forEach(product => {
       if (product && product.itemCategoryList && product.itemCategoryList.length > 0) {
         this.categoryTree.addProduct(product, product.itemCategoryList);
-        categoryCount++;
+        productsWithCategories++;
+        categoryCount += product.itemCategoryList.length;
       }
     });
     
     const categories = this.categoryTree.getCategories();
-    console.log(`Category tree built: ${categories.length} categories from ${categoryCount} products`);
-    console.log('Top categories:', categories.slice(0, 10).map(c => `${c.name} (${c.count})`));
+    console.log(`Category tree built: ${categories.length} unique categories from ${productsWithCategories} products (${categoryCount} total category assignments)`);
+    console.log('Top categories:', categories.slice(0, 15).map(c => `"${c.name}" (${c.count})`));
+    
+    if (categories.length === 0) {
+      console.error('No categories found! Check CSV parsing and filtering.');
+      // Log some sample products to debug
+      console.log('Sample products for debugging:', this.products.slice(0, 3).map(p => ({
+        name: p.name,
+        itemCategory: p.itemCategory,
+        itemCategoryList: p.itemCategoryList,
+        price: p.price
+      })));
+    }
   }
 
   initializeFilters() {
@@ -309,7 +337,8 @@ class TileCatalog {
             </div>
             <div class="category-list">
               <div style="color: var(--color-text-muted); font-size: 0.8rem; text-align: center; padding: 1rem;">
-                Категории не найдены
+                Категории не найдены<br>
+                <small>Проверьте консоль для отладки</small>
               </div>
             </div>
           </div>
@@ -345,11 +374,12 @@ class TileCatalog {
           <div class="category-list">
             ${visibleCategories.map(cat => {
               const isSelected = this.categoryState.selectedCategories.has(cat.name);
+              const safeId = cat.name.replace(/[^\w\-]/g, '-');
               return `
                 <div class="category-item">
                   <input type="checkbox" class="category-checkbox" 
-                    value="${cat.name}" ${isSelected ? 'checked' : ''} id="cat-${cat.name.replace(/\s+/g, '-')}">
-                  <label for="cat-${cat.name.replace(/\s+/g, '-')}" class="category-name">${cat.name}</label>
+                    value="${cat.name}" ${isSelected ? 'checked' : ''} id="cat-${safeId}">
+                  <label for="cat-${safeId}" class="category-name">${cat.name}</label>
                   <span class="category-count">${cat.count}</span>
                 </div>
               `;
