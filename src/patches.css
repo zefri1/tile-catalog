@@ -1,25 +1,15 @@
-/* Sidebar sticky but without global scroll */
-.filters-sidebar {
-  position: sticky;
-  top: 120px;
-  overflow: visible; /* no global scrollbar */
+/* Sidebar sticky + contained scroll */
+.filters-sidebar{
+  position:sticky; top:120px;
+  max-height:calc(100vh - 140px);
+  overflow-y:auto; /* global scroll but contained */
+  overflow-x:hidden;
+  -webkit-overflow-scrolling:touch;
 }
 
-/* Internal lists scroll */
-.checkbox-group, .category-list {
-  max-height: 220px;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: thin;
-}
+/* Inner lists fine too (optional smaller caps) */
+.checkbox-group,.category-list{max-height:none; overflow:visible}
 
-/* Smooth spacing */
-.filters-content { display: flex; flex-direction: column; gap: 12px; }
-.filter-group { margin-bottom: 8px; }
-
-/* Hide empty groups */
-.filter-group.empty { display: none; }
-
-@media (max-width: 768px) {
-  .checkbox-group, .category-list { max-height: 160px; }
-}
+/* Keep spacing tidy */
+.filters-content{display:flex;flex-direction:column;gap:12px}
+.filter-group{margin-bottom:8px}
