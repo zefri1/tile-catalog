@@ -34,7 +34,7 @@ function normArray(raw) {
 function s(v) { return v ? String(v).trim() : '' }
 function n(v) { const x = parseFloat(String(v).replace(/[^0-9.,]/g, '').replace(',', '.')); return isNaN(x) ? 0 : Math.round(x) }
 function b(v) { if (typeof v === 'boolean') return v; const l = String(v || '').toLowerCase().trim(); return l === 'true' || l === '1' || l === 'да' || l === 'yes' }
-function cs(v) { if (!v) return ''; return String(v).replace(/[\'>"]/g, '').replace(/\s+/g, ' ').trim() }
+function cs(v) { if (!v) return ''; return String(v).replace(/[\\'>\"]/g, '').replace(/\s+/g, ' ').trim() }
 
 function parseCSVData(csvContent) {
   const rows = parseCSV(csvContent);
@@ -113,6 +113,8 @@ class CategoryTree {
   }
   
   addProduct(product, categoryList) {
+    if (!categoryList || !Array.isArray(categoryList)) return;
+    
     categoryList.forEach(category => {
       const trimmed = category.trim();
       if (!trimmed) return;
@@ -219,24 +221,36 @@ class TileCatalog {
   }
 
   buildCategoryTree() {
+    if (!this.products || !Array.isArray(this.products)) {
+      console.warn('Products is not an array:', this.products);
+      return;
+    }
+    
     this.products.forEach(product => {
-      this.categoryTree.addProduct(product, product.itemCategoryList);
+      if (product && product.itemCategoryList) {
+        this.categoryTree.addProduct(product, product.itemCategoryList);
+      }
     });
     console.log('Category tree built, categories:', this.categoryTree.getCategories().length);
   }
 
   initializeFilters() {
+    if (!this.products || !Array.isArray(this.products)) {
+      console.warn('Cannot initialize filters: products is not an array');
+      return;
+    }
+    
     const brands = [...new Set(this.products.map(p => p.brand))].filter(Boolean).sort();
     const colors = [...new Set(this.products.map(p => p.color))].filter(Boolean).sort();
     const countries = [...new Set(this.products.map(p => p.country))].filter(Boolean).sort();
     
-    const allSurfs = [].concat(...this.products.map(p => p.itemSurfaceList || []));
+    const allSurfs = [].concat(...this.products.map(p => (p.itemSurfaceList || [])));
     const surfaces = [...new Set(allSurfs)].filter(Boolean).sort();
     
-    const allUses = [].concat(...this.products.map(p => p.areasOfUseList || []));
+    const allUses = [].concat(...this.products.map(p => (p.areasOfUseList || [])));
     const uses = [...new Set(allUses)].filter(Boolean).sort();
     
-    const allStructs = [].concat(...this.products.map(p => p.surfaceStructList || []));
+    const allStructs = [].concat(...this.products.map(p => (p.surfaceStructList || [])));
     const structs = [...new Set(allStructs)].filter(Boolean).sort();
     
     console.log('Filter data:', { brands: brands.length, colors: colors.length, countries: countries.length, surfaces: surfaces.length, uses: uses.length, structs: structs.length });
@@ -244,12 +258,12 @@ class TileCatalog {
     this.createFiltersUI(brands, colors, countries, surfaces, uses, structs);
     
     const prices = this.products.map(p => p.price).filter(p => p > 0);
-    this.filters.priceMin = Math.min(...prices);
-    this.filters.priceMax = Math.max(...prices);
+    this.filters.priceMin = prices.length > 0 ? Math.min(...prices) : 0;
+    this.filters.priceMax = prices.length > 0 ? Math.max(...prices) : 1250;
   }
 
   createCategoryFilter() {
-    const categories = this.categoryTree.getCategories();
+    const categories = this.categoryTree.getCategories() || [];
     const visibleCategories = categories.slice(0, this.categoryState.showLimit);
     const hiddenCount = Math.max(0, categories.length - this.categoryState.showLimit);
     
@@ -306,7 +320,7 @@ class TileCatalog {
     if (!sidebar) return;
     
     const createFilterGroup = (title, items, id) => {
-      if (items.length === 0) return '';
+      if (!items || !Array.isArray(items) || items.length === 0) return '';
       return `
         <div class="filter-group">
           <label class="filter-label">${title}:</label>
@@ -359,7 +373,10 @@ class TileCatalog {
   }
   
   refreshCategoryFilter() {
-    const filterGroup = document.querySelector('.category-filter').parentElement;
+    const categoryFilterContainer = document.querySelector('.category-filter');
+    if (!categoryFilterContainer) return;
+    
+    const filterGroup = categoryFilterContainer.parentElement;
     const newCategoryHTML = this.createCategoryFilter();
     filterGroup.innerHTML = newCategoryHTML;
     this.bindCategoryEvents();
@@ -367,18 +384,21 @@ class TileCatalog {
 
   bindCategoryEvents() {
     // Category checkboxes
-    document.querySelectorAll('.category-checkbox').forEach(cb => {
-      cb.addEventListener('change', (e) => {
-        const categoryName = e.target.value;
-        if (e.target.checked) {
-          this.categoryState.selectedCategories.add(categoryName);
-        } else {
-          this.categoryState.selectedCategories.delete(categoryName);
-        }
-        this.applyFilters();
-        this.refreshCategoryFilter();
+    const categoryCheckboxes = document.querySelectorAll('.category-checkbox');
+    if (categoryCheckboxes) {
+      categoryCheckboxes.forEach(cb => {
+        cb.addEventListener('change', (e) => {
+          const categoryName = e.target.value;
+          if (e.target.checked) {
+            this.categoryState.selectedCategories.add(categoryName);
+          } else {
+            this.categoryState.selectedCategories.delete(categoryName);
+          }
+          this.applyFilters();
+          this.refreshCategoryFilter();
+        });
       });
-    });
+    }
   }
 
   bindEvents() {
@@ -427,7 +447,8 @@ class TileCatalog {
       });
       this.categoryState.selectedCategories.clear();
       this.categoryState.showLimit = 10;
-      document.querySelectorAll('.filter-checkbox, .category-checkbox').forEach(cb => cb.checked = false);
+      const checkboxes = document.querySelectorAll('.filter-checkbox, .category-checkbox');
+      if (checkboxes) checkboxes.forEach(cb => cb.checked = false);
       if (searchInput) searchInput.value = '';
       this.applyFilters();
       this.refreshCategoryFilter();
@@ -441,21 +462,24 @@ class TileCatalog {
     });
     
     // View buttons
-    document.querySelectorAll('.view-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        document.querySelectorAll('.view-btn').forEach(b => {
-          b.classList.remove('active');
-          b.setAttribute('aria-pressed', 'false');
+    const viewBtns = document.querySelectorAll('.view-btn');
+    if (viewBtns) {
+      viewBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          document.querySelectorAll('.view-btn').forEach(b => {
+            b.classList.remove('active');
+            b.setAttribute('aria-pressed', 'false');
+          });
+          e.target.classList.add('active');
+          e.target.setAttribute('aria-pressed', 'true');
+          this.currentView = parseInt(e.target.dataset.columns);
+          const grid = document.getElementById('products-grid');
+          if (grid) {
+            grid.className = `products-grid grid-${this.currentView}`;
+          }
         });
-        e.target.classList.add('active');
-        e.target.setAttribute('aria-pressed', 'true');
-        this.currentView = parseInt(e.target.dataset.columns);
-        const grid = document.getElementById('products-grid');
-        if (grid) {
-          grid.className = `products-grid grid-${this.currentView}`;
-        }
       });
-    });
+    }
     
     // Theme toggle
     const themeBtn = document.getElementById('theme-toggle');
@@ -469,6 +493,14 @@ class TileCatalog {
   }
 
   applyFilters() {
+    if (!this.products || !Array.isArray(this.products)) {
+      console.warn('Cannot apply filters: products is not an array');
+      this.filteredProducts = [];
+      this.updateResultsCount();
+      this.renderProducts();
+      return;
+    }
+    
     let filtered = [...this.products];
     const s = this.filters;
     
@@ -515,6 +547,8 @@ class TileCatalog {
   }
 
   sortProducts(products) {
+    if (!products || !Array.isArray(products)) return;
+    
     switch (this.currentSort) {
       case 'price-asc': products.sort((a, b) => a.price - b.price); break;
       case 'price-desc': products.sort((a, b) => b.price - a.price); break;
@@ -531,7 +565,7 @@ class TileCatalog {
   renderProducts() {
     const grid = document.getElementById('products-grid'); const nr = document.getElementById('no-results');
     if (!grid || !nr) return;
-    if (this.filteredProducts.length === 0) { grid.innerHTML = ''; nr.classList.remove('hidden'); return; }
+    if (!this.filteredProducts || this.filteredProducts.length === 0) { grid.innerHTML = ''; nr.classList.remove('hidden'); return; }
     nr.classList.add('hidden');
     grid.innerHTML = ''; this.renderIndex = 0;
     const renderChunk = () => {
@@ -571,48 +605,63 @@ class TileCatalog {
       const container = document.createElement('div');
       container.className = 'load-more-container';
       container.innerHTML = `<button id="load-more-btn" class="load-more-btn">Показать ещё</button>`;
-      document.querySelector('.products-area').appendChild(container);
+      const productsArea = document.querySelector('.products-area');
+      if (productsArea) productsArea.appendChild(container);
       btn = container.querySelector('#load-more-btn');
     }
-    btn.style.display = this.renderIndex >= this.filteredProducts.length ? 'none' : 'block';
-    btn.onclick = () => {
-      this.batchSize += 60;
-      this.renderProducts();
-    };
+    if (btn) {
+      btn.style.display = this.renderIndex >= this.filteredProducts.length ? 'none' : 'block';
+      btn.onclick = () => {
+        this.batchSize += 60;
+        this.renderProducts();
+      };
+    }
   }
 
   attachCardClicks() {
     const grid = document.getElementById('products-grid');
     if (!grid) return;
-    grid.querySelectorAll('.product-card').forEach(card => {
-      card.addEventListener('click', () => {
-        const id = card.dataset.productId;
-        const p = this.filteredProducts.find(x => x.id === id);
-        if (p) this.openModal(p);
+    const cards = grid.querySelectorAll('.product-card');
+    if (cards) {
+      cards.forEach(card => {
+        card.addEventListener('click', () => {
+          const id = card.dataset.productId;
+          const p = this.filteredProducts.find(x => x.id === id);
+          if (p) this.openModal(p);
+        });
       });
-    });
+    }
   }
 
   openModal(product) {
     const modal = document.getElementById('product-modal');
     if (!modal) return;
     
-    document.getElementById('modal-title').textContent = product.name;
-    document.getElementById('modal-brand').textContent = product.brand;
-    document.getElementById('modal-color').textContent = product.color;
-    document.getElementById('modal-price').textContent = `${product.price.toLocaleString('ru-RU')} ₽`;
-    document.getElementById('modal-desc').textContent = product.description || 'Описание отсутствует';
-    document.getElementById('modal-status').textContent = product.inStock ? 'В наличии' : 'Под заказ';
+    const modalTitle = document.getElementById('modal-title');
+    const modalBrand = document.getElementById('modal-brand');
+    const modalColor = document.getElementById('modal-color');
+    const modalPrice = document.getElementById('modal-price');
+    const modalDesc = document.getElementById('modal-desc');
+    const modalStatus = document.getElementById('modal-status');
+    
+    if (modalTitle) modalTitle.textContent = product.name;
+    if (modalBrand) modalBrand.textContent = product.brand;
+    if (modalColor) modalColor.textContent = product.color;
+    if (modalPrice) modalPrice.textContent = `${product.price.toLocaleString('ru-RU')} ₽`;
+    if (modalDesc) modalDesc.textContent = product.description || 'Описание отсутствует';
+    if (modalStatus) modalStatus.textContent = product.inStock ? 'В наличии' : 'Под заказ';
     
     const img = document.getElementById('modal-image');
     const ph = document.getElementById('modal-image-ph');
     if (product.image) {
-      img.src = product.image;
-      img.style.display = 'block';
-      ph.style.display = 'none';
+      if (img) {
+        img.src = product.image;
+        img.style.display = 'block';
+      }
+      if (ph) ph.style.display = 'none';
     } else {
-      img.style.display = 'none';
-      ph.style.display = 'flex';
+      if (img) img.style.display = 'none';
+      if (ph) ph.style.display = 'flex';
     }
     
     modal.setAttribute('aria-hidden', 'false');
@@ -628,9 +677,13 @@ class TileCatalog {
       document.body.classList.remove('modal-open');
     };
     
-    modal.querySelector('.modal__close').onclick = closeModal;
-    modal.querySelector('#modal-close-btn').onclick = closeModal;
-    modal.querySelector('.modal__backdrop').onclick = closeModal;
+    const modalCloseBtn = modal.querySelector('.modal__close');
+    const modalCloseBtnBottom = modal.querySelector('#modal-close-btn');
+    const modalBackdrop = modal.querySelector('.modal__backdrop');
+    
+    if (modalCloseBtn) modalCloseBtn.onclick = closeModal;
+    if (modalCloseBtnBottom) modalCloseBtnBottom.onclick = closeModal;
+    if (modalBackdrop) modalBackdrop.onclick = closeModal;
     
     const handleEsc = (e) => {
       if (e.key === 'Escape') {
