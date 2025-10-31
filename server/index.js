@@ -5,28 +5,41 @@ import cors from 'cors';
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// CORS для всех доменов (можно ограничить)
+// CORS для всех доменов
 app.use(cors());
-
-// Middleware
 app.use(express.json());
 
-// Утилита парсинга CSV в JSON с поддержкой формата поставщика + чекбоксы
+// Утилита парсинга CSV с поддержкой чекбоксов
 function parseCSV(csvText) {
   const lines = csvText.split(/\r?\n/).filter(line => line.trim());
-  if (lines.length < 2) return [];
+  if (lines.length < 2) return { items: [], hasCheckboxes: false, debug: 'Empty CSV' };
   
   const headers = lines[0].split(/[;,]/).map(h => h.trim().toLowerCase());
   const items = [];
   
-  // Маппинг колонок поставщика -> формат каталога + поддержка чекбоксов
+  // Поиск колонки с чекбоксами
+  const checkboxColumnIndex = headers.findIndex(h => 
+    h.includes('на_сайт') || 
+    h.includes('насайт') ||
+    h.includes('сайт') || 
+    h.includes('показывать') ||
+    h === 'checkbox'
+  );
+  
+  const hasCheckboxColumn = checkboxColumnIndex !== -1;
+  let checkedCount = 0;
+  let totalRows = lines.length - 1;
+  
+  console.log('📊 CSV Headers:', headers.slice(0, 8));
+  
+  if (hasCheckboxColumn) {
+    console.log(`☑️ Checkbox column found at index ${checkboxColumnIndex}: "${headers[checkboxColumnIndex]}"`);
+  } else {
+    console.log('ℹ️ No checkbox column found - showing all valid items');
+  }
+  
+  // Основные колонки поставщика
   const columnMap = {
-    // Чекбокс для управления видимостью на сайте
-    'на_сайт': headers.findIndex(h => h.includes('на_сайт') || h.includes('☑️') || h === 'checkbox'),
-    'сайт': headers.findIndex(h => h.includes('сайт')),
-    'показывать': headers.findIndex(h => h.includes('показывать')),
-    
-    // Основные поля поставщика -> Каталог
     'id': headers.findIndex(h => h === 'id'),
     'brand': headers.findIndex(h => h === 'brand'), 
     'fullname': headers.findIndex(h => h === 'fullname'),
@@ -37,50 +50,49 @@ function parseCSV(csvText) {
     'price.roznichnaya': headers.findIndex(h => h === 'price.roznichnaya'),
     'image': headers.findIndex(h => h === 'image'),
     'rest.moskow': headers.findIndex(h => h === 'rest.moskow'),
-    'byorder': headers.findIndex(h => h === 'byorder'),
-    'itemcategory': headers.findIndex(h => h === 'itemcategory'),
-    'hidden': headers.findIndex(h => h === 'hidden')
+    'byorder': headers.findIndex(h => h === 'byorder')
   };
-  
-  // Найдем индекс колонки с чекбоксами
-  const checkboxColumnIndex = columnMap['на_сайт'] !== -1 ? columnMap['на_сайт'] : 
-                              columnMap['сайт'] !== -1 ? columnMap['сайт'] :
-                              columnMap['показывать'] !== -1 ? columnMap['показывать'] : 0; // Первая колонка по умолчанию
-  
-  console.log('📊 CSV Headers:', headers.slice(0, 10));
-  console.log('☑️ Checkbox column index:', checkboxColumnIndex, 'Header:', headers[checkboxColumnIndex]);
   
   for (let i = 1; i < lines.length; i++) {
     const values = lines[i].split(/[;,]/);
     if (values.length < 3) continue;
     
-    const row = {};
-    headers.forEach((header, index) => {
-      row[header] = (values[index] || '').trim().replace(/^"(.*)"$/, '$1');
-    });
-    
     try {
-      // Проверяем чекбокс - показывать ли товар на сайте
-      const showOnSite = values[checkboxColumnIndex];
-      const isVisibleOnSite = showOnSite === 'TRUE' || showOnSite === 'true' || showOnSite === '1';
+      // Проверяем чекбокс (если есть колонка)
+      let isVisibleOnSite = true; // По умолчанию показываем
       
-      // Если товар не отмечен чекбоксом - пропускаем
-      if (!isVisibleOnSite) {
-        continue;
+      if (hasCheckboxColumn && values.length > checkboxColumnIndex) {
+        const checkboxValue = (values[checkboxColumnIndex] || '').trim();
+        
+        // Если чекбокс явно отмечен
+        if (checkboxValue === 'TRUE' || checkboxValue === 'true' || checkboxValue === '1') {
+          checkedCount++;
+          isVisibleOnSite = true;
+        }
+        // Если чекбокс явно НЕ отмечен
+        else if (checkboxValue === 'FALSE' || checkboxValue === 'false' || checkboxValue === '0') {
+          isVisibleOnSite = false;
+        }
+        // Если пусто - показываем (для совместимости)
+        else {
+          isVisibleOnSite = true;
+        }
       }
       
-      // Извлекаем данные с учетом разных форматов
-      const id = row['id'] || `item-${i}`;
-      const brand = row['brand'] || 'Без бренда';
-      const fullName = row['fullname'] || '';
-      const collection = row['collection'] || '';
-      const country = row['country'] || '';
-      const color = row['color'] || 'Не указан';
+      if (!isVisibleOnSite) continue;
       
-      // Обработка размера (30x30x0,8 -> 30×30)
-      let size = row['size'] || '';
+      // Извлекаем данные
+      const id = (values[columnMap.id] || `item-${i}`).trim();
+      const brand = (values[columnMap.brand] || 'Без бренда').trim();
+      const fullName = (values[columnMap.fullname] || '').trim();
+      const collection = (values[columnMap.collection] || '').trim();
+      const country = (values[columnMap.country] || '').trim();
+      const color = (values[columnMap.color] || 'Не указан').trim();
+      
+      // Обработка размера
+      let size = (values[columnMap.size] || '').trim();
       if (size) {
-        const sizeMatch = size.match(/(\d+)[x×](\d+)/);
+        const sizeMatch = size.match(/(\d+)[x×x](\d+)/);
         if (sizeMatch) {
           size = `${sizeMatch[1]}×${sizeMatch[2]}`;
         }
@@ -88,10 +100,10 @@ function parseCSV(csvText) {
       
       // Парсим цену
       let price = 0;
-      const priceRaw = row['price.roznichnaya'] || row['price'] || '0';
+      const priceRaw = (values[columnMap['price.roznichnaya']] || '0').trim();
       if (priceRaw && priceRaw !== 'FALSE') {
         try {
-          price = parseInt(parseFloat(priceRaw.toString().replace(',', '.')));
+          price = parseInt(parseFloat(priceRaw.toString().replace(',', '.'))) || 0;
         } catch (e) {
           price = 0;
         }
@@ -100,17 +112,14 @@ function parseCSV(csvText) {
       // Пропускаем товары без цены
       if (price <= 0) continue;
       
-      // Создаем читаемое название
+      // Обрабатываем название
       let name = fullName;
       if (name) {
-        // Убираем скобки с техническими данными
-        name = name.replace(/\s*\([^)]*\)/g, '');
-        // Убираем повторяющийся бренд
+        name = name.replace(/\s*\([^)]*\)/g, ''); // Убираем скобки
         if (brand && name.toLowerCase().startsWith(brand.toLowerCase())) {
           name = name.substring(brand.length).trim();
         }
-        // Убираем "керамогранит" и подобные слова в начале
-        name = name.replace(/^(керамогранит|плитка керамическая|плитка)\s+/i, '');
+        name = name.replace(/^(керамогранит|плитка)\s+/i, '');
         name = name.trim();
       }
       
@@ -118,26 +127,12 @@ function parseCSV(csvText) {
         name = `${brand} ${collection}`.trim() || 'Плитка';
       }
       
-      // Ограничиваем длину
       if (name.length > 50) {
         name = name.substring(0, 47) + '...';
       }
       
-      // Нормализуем цвет
-      const colorMap = {
-        'серый': 'Серый',
-        'светло-серый': 'Светло-серый',
-        'темно-серый': 'Темно-серый', 
-        'чёрный': 'Черный',
-        'черный': 'Черный',
-        'белый': 'Белый',
-        'бежевый': 'Бежевый',
-        'коричневый': 'Коричневый'
-      };
-      const normalizedColor = colorMap[color.toLowerCase()] || color;
-      
       // Определяем наличие
-      const stockRaw = row['rest.moskow'] || row['stock'] || '0';
+      const stockRaw = (values[columnMap['rest.moskow']] || '0').trim();
       let hasStock = false;
       try {
         const stockQty = parseFloat(stockRaw.toString().replace(',', '.'));
@@ -146,10 +141,10 @@ function parseCSV(csvText) {
         hasStock = false;
       }
       
-      const byOrder = (row['byorder'] || '').toLowerCase() === 'true';
+      const byOrder = (values[columnMap.byorder] || '').toLowerCase() === 'true';
       
       // Проверяем URL изображения
-      let imageUrl = row['image'] || '';
+      let imageUrl = (values[columnMap.image] || '').trim();
       if (imageUrl && !imageUrl.startsWith('http')) {
         imageUrl = '';
       }
@@ -158,22 +153,22 @@ function parseCSV(csvText) {
         id: id,
         name: name,
         brand: brand,
-        color: normalizedColor,
+        color: color,
         price: price,
         description: fullName.substring(0, 150) + (fullName.length > 150 ? '...' : ''),
         image: imageUrl,
         inStock: hasStock,
         onDemand: !hasStock && (byOrder || price > 0),
-        hidden: false, // Если товар отмечен чекбоксом, он не скрыт
+        hidden: false,
         phone: '',
-        category: row['itemcategory'] || row['category'] || 'Плитка',
+        category: (values[columnMap.itemcategory] || 'Плитка').trim(),
         stock: stockRaw,
         collection: collection,
         country: country,
         size: size
       };
       
-      // Добавляем только если товар доступен
+      // Добавляем только доступные товары
       if (item.inStock || item.onDemand) {
         items.push(item);
       }
@@ -184,10 +179,22 @@ function parseCSV(csvText) {
     }
   }
   
-  return items;
+  const debugInfo = {
+    totalRows: totalRows,
+    hasCheckboxColumn: hasCheckboxColumn,
+    checkboxColumnName: hasCheckboxColumn ? headers[checkboxColumnIndex] : 'None',
+    checkedItems: checkedCount,
+    processedItems: items.length
+  };
+  
+  return {
+    items: items,
+    hasCheckboxes: hasCheckboxColumn,
+    debug: debugInfo
+  };
 }
 
-// API эндпоинт: проксирование Google Sheets CSV -> JSON с поддержкой чекбоксов
+// API эндпоинт
 app.get('/api/items', async (req, res) => {
   try {
     const csvUrl = process.env.SHEET_CSV_URL;
@@ -204,7 +211,7 @@ app.get('/api/items', async (req, res) => {
     
     const response = await fetch(csvUrl, {
       headers: {
-        'User-Agent': 'TileCatalog/1.0'
+        'User-Agent': 'TileCatalog/1.2'
       },
       timeout: 15000
     });
@@ -215,18 +222,19 @@ app.get('/api/items', async (req, res) => {
     
     const csvText = await response.text();
     console.log(`[${new Date().toISOString()}] CSV length:`, csvText.length);
-    console.log('CSV preview:', csvText.substring(0, 200) + '...');
     
-    const items = parseCSV(csvText);
+    const parseResult = parseCSV(csvText);
+    const items = parseResult.items;
     
-    console.log(`[${new Date().toISOString()}] Processed ${items.length} items (only checked items shown)`);
+    console.log(`[${new Date().toISOString()}] Debug:`, parseResult.debug);
+    console.log(`[${new Date().toISOString()}] Processed ${items.length} items`);
     
     if (items.length > 0) {
       console.log('Sample items:', items.slice(0, 2).map(i => `${i.name} - ${i.price}₽`));
     }
     
-    // Кэш на 1 минуту
-    res.set('Cache-Control', 'public, max-age=60');
+    // Кэш на 30 секунд
+    res.set('Cache-Control', 'public, max-age=30');
     res.set('Content-Type', 'application/json');
     
     res.json({
@@ -234,7 +242,14 @@ app.get('/api/items', async (req, res) => {
       count: items.length,
       updated_at: new Date().toISOString(),
       source_url: csvUrl.substring(0, 60) + '...',
-      note: 'Only items marked with checkbox are shown',
+      debug: parseResult.debug,
+      note: parseResult.hasCheckboxes ? 
+        (
+          parseResult.debug.checkedItems > 0 ? 
+          `Показываем только отмеченные товары (${parseResult.debug.checkedItems})` : 
+          'Колонка чекбоксов существует, но пуста - показываем все товары'
+        ) : 
+        'Нет колонки чекбоксов - показываем все товары',
       items: items
     });
     
@@ -260,13 +275,17 @@ app.get('/healthz', (req, res) => {
 app.get('/', (req, res) => {
   res.json({
     service: 'Tile Catalog API',
-    version: '1.2.0',
-    features: ['checkbox-control', 'supplier-format', 'auto-mapping'],
+    version: '1.2.1',
+    features: ['checkbox-control', 'supplier-format', 'auto-mapping', 'smart-fallback'],
     endpoints: {
-      '/api/items': 'GET - получить список товаров из Google Sheets (только отмеченные чекбоксом)',
+      '/api/items': 'GET - получить список товаров из Google Sheets',
       '/healthz': 'GET - проверка работоспособности'
     },
-    note: 'Items are filtered by checkbox in first column of CSV',
+    checkbox_behavior: {
+      'if_column_exists_and_filled': 'Показываем только отмеченные (TRUE)',
+      'if_column_exists_but_empty': 'Показываем все (совместимость)',
+      'if_no_column': 'Показываем все'
+    },
     timestamp: new Date().toISOString()
   });
 });
@@ -282,10 +301,10 @@ app.use('*', (req, res) => {
 
 // Запуск сервера
 app.listen(PORT, () => {
-  console.log(`🚀 Tile Catalog API v1.2.0 running on port ${PORT}`);
+  console.log(`🚀 Tile Catalog API v1.2.1 running on port ${PORT}`);
   console.log(`📊 Health check: http://localhost:${PORT}/healthz`);
   console.log(`📋 Items API: http://localhost:${PORT}/api/items`);
-  console.log(`☑️ Feature: Checkbox control for site visibility`);
+  console.log(`☑️ Feature: Smart checkbox control with fallback`);
   
   if (!process.env.SHEET_CSV_URL) {
     console.warn('⚠️ SHEET_CSV_URL not set - API will return error');
