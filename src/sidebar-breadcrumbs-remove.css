@@ -1,0 +1,21 @@
+/**
+ * Remove legacy breadcrumb imitation from category sidebar
+ * This patch hides any breadcrumb-like blocks inside the left menu.
+ */
+
+/* Hide any breadcrumb-like elements inside filters sidebar */
+.filters-sidebar .category-breadcrumbs,
+.filters-sidebar .breadcrumb-item,
+.filters-sidebar .breadcrumb-separator,
+.filters-sidebar .category-header .category-breadcrumbs,
+.filters-sidebar .category-item .breadcrumbs,
+.filters-sidebar nav[role="navigation"],
+.filters-panel .category-breadcrumbs {
+  display: none !important;
+}
+
+/* Ensure only plain category items remain visible */
+.filters-sidebar .category-item .category-main { display: flex; }
+.filters-sidebar .category-item .category-children { display: none; }
+.filters-sidebar .category-item.has-children:hover .category-children,
+.filters-sidebar .category-item.expanded .category-children { display: block; }
