@@ -19,7 +19,7 @@
     window.SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRfhgka5nFoR1TXYDGQ5CziYYqGSDXjhw_yJeO-MqFTb-k_RWlkjvaWxy9vBzLuKmo4KdCnz2SAdvMh/pub?gid=0&single=true&output=csv';
     
     // Кэш-бастер для обновления без редеплоя
-    window.SHEET_CACHE_BUSTER = 'v=2';
+    window.SHEET_CACHE_BUSTER = 'v=3';
     
     // Debug режим
     window.DEBUG_MODE = true;
@@ -81,32 +81,50 @@
                         <div class="filters-content">
                             <!-- Search Filter -->
                             <div class="filter-group">
-                                <label class="filter-label" for="search-input">Поиск</label>
+                                <label class="filter-label" for="search-input">ПОИСК</label>
                                 <input type="text" id="search-input" class="search-input" placeholder="Название, бренд, описание...">
                             </div>
                             
                             <!-- Brand Filter -->
                             <div class="filter-group">
-                                <label class="filter-label">Бренды</label>
+                                <label class="filter-label">БРЕНДЫ</label>
                                 <div id="brand-filters" class="checkbox-group"></div>
+                            </div>
+                            
+                            <!-- Collection Filter -->
+                            <div class="filter-group">
+                                <label class="filter-label">КОЛЛЕКЦИИ</label>
+                                <div id="collection-filters" class="checkbox-group"></div>
+                            </div>
+                            
+                            <!-- Country Filter -->
+                            <div class="filter-group">
+                                <label class="filter-label">СТРАНА</label>
+                                <div id="country-filters" class="checkbox-group"></div>
+                            </div>
+                            
+                            <!-- Size Filter -->
+                            <div class="filter-group">
+                                <label class="filter-label">РАЗМЕРЫ</label>
+                                <div id="size-filters" class="checkbox-group"></div>
                             </div>
                             
                             <!-- Color Filter -->
                             <div class="filter-group">
-                                <label class="filter-label">Цвета</label>
+                                <label class="filter-label">ЦВЕТА</label>
                                 <div id="color-filters" class="checkbox-group"></div>
                             </div>
                             
                             <!-- Price Filter -->
                             <div class="filter-group">
-                                <label class="filter-label">Цена, руб</label>
+                                <label class="filter-label">ЦЕНА, РУБ</label>
                                 <div class="price-filter">
                                     <div class="price-inputs">
-                                        <input type="number" id="price-min" class="price-input" value="0" min="0">
+                                        <input type="number" id="price-min" class="price-input" value="0" min="0" placeholder="Мин">
                                         <span class="price-separator">—</span>
-                                        <input type="number" id="price-max" class="price-input" value="1250" min="0">
+                                        <input type="number" id="price-max" class="price-input" value="5000" min="0" placeholder="Макс">
                                     </div>
-                                    <input type="range" id="price-range" class="price-slider" min="0" max="1250" value="1250">
+                                    <input type="range" id="price-range" class="price-slider" min="0" max="5000" value="5000">
                                 </div>
                             </div>
                         </div>
