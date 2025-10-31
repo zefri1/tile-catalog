@@ -1,15 +1,11 @@
-/* Sidebar sticky + contained scroll */
-.filters-sidebar{
-  position:sticky; top:120px;
-  max-height:calc(100vh - 140px);
-  overflow-y:auto; /* global scroll but contained */
-  overflow-x:hidden;
-  -webkit-overflow-scrolling:touch;
-}
+/* Invisible (thin) scrollbar for sidebar */
+.filters-sidebar{scrollbar-width:none}
+.filters-sidebar::-webkit-scrollbar{width:0;height:0}
 
-/* Inner lists fine too (optional smaller caps) */
-.checkbox-group,.category-list{max-height:none; overflow:visible}
+/* Breadcrumb button style like design */
+.category-clear{
+  background:none;border:none;color:var(--color-primary);font-size:.85rem;font-weight:600;cursor:pointer;padding:0;margin:0 0 0 .5rem;border-radius:6px}
+.category-clear:hover{color:var(--color-primary-dark)}
 
-/* Keep spacing tidy */
-.filters-content{display:flex;flex-direction:column;gap:12px}
-.filter-group{margin-bottom:8px}
+/* Breadcrumbs inline */
+.breadcrumbs{display:flex;align-items:center;gap:.25rem;flex-wrap:wrap}
