@@ -1,6 +1,6 @@
 /**
  * Marketplace-style Category Navigation System
- * Создаёт навигацию по категориям как на маркетплейсах
+ * Создаёт навигацию по категориям плитки как на маркетплейсах
  */
 
 class MarketplaceCategoryNavigator {
@@ -30,7 +30,7 @@ class MarketplaceCategoryNavigator {
   }
 
   /**
-   * Построение дерева категорий из данных каталога
+   * Построение дерева категорий из данных каталога с правильной структурой для плитки
    */
   buildCategoryTree() {
     const allCategories = new Set();
@@ -46,37 +46,73 @@ class MarketplaceCategoryNavigator {
       }
     });
 
-    // Группируем категории по принципу: если есть подкатегории, создаем иерархию
+    // Создаем правильную структуру категорий для плитки
     const categoryTree = new Map();
     const sortedCategories = Array.from(allCategories).sort((a, b) => 
       a.localeCompare(b, 'ru', { numeric: true })
     );
 
+    // Определяем основные группы плитки
+    const mainGroups = {
+      'Плитка': [
+        'керамическая плитка', 'настенная плитка', 'напольная плитка', 'плитка для ванной',
+        'плитка для кухни', 'декоративная плитка', 'плитка под дерево', 'плитка под камень'
+      ],
+      'Керамогранит': [
+        'керамогранит', 'полированный керамогранит', 'матовый керамогранит', 
+        'структурированный керамогранит', 'керамогранит под дерево', 'керамогранит под камень'
+      ],
+      'Мозаика': [
+        'мозаика', 'стеклянная мозаика', 'каменная мозаика', 'керамическая мозаика', 
+        'металлическая мозаика'
+      ],
+      'Декор': [
+        'декор', 'бордюр', 'панно', 'вставки', 'декоративные элементы'
+      ]
+    };
+
+    // Создаем структуру категорий
     sortedCategories.forEach(category => {
-      // Определяем родительскую категорию по общим словам
-      const parentCategory = this.findParentCategory(category, sortedCategories);
+      const lowerCategory = category.toLowerCase();
+      let parentFound = false;
       
-      if (parentCategory) {
-        if (!categoryTree.has(parentCategory)) {
-          categoryTree.set(parentCategory, {
-            name: parentCategory,
-            children: [],
-            productCount: 0
-          });
-        }
-        categoryTree.get(parentCategory).children.push({
-          name: category,
-          children: [],
-          productCount: this.getProductCountForCategory(category)
-        });
-      } else {
-        if (!categoryTree.has(category)) {
-          categoryTree.set(category, {
+      // Ищем к какой основной группе относится категория
+      for (const [mainGroup, keywords] of Object.entries(mainGroups)) {
+        if (keywords.some(keyword => lowerCategory.includes(keyword.toLowerCase()))) {
+          if (!categoryTree.has(mainGroup)) {
+            categoryTree.set(mainGroup, {
+              name: mainGroup,
+              children: [],
+              productCount: 0
+            });
+          }
+          
+          categoryTree.get(mainGroup).children.push({
             name: category,
             children: [],
             productCount: this.getProductCountForCategory(category)
           });
+          
+          parentFound = true;
+          break;
         }
+      }
+      
+      // Если категория не подошла ни к одной группе, создаем отдельную
+      if (!parentFound) {
+        if (!categoryTree.has('Другое')) {
+          categoryTree.set('Другое', {
+            name: 'Другое',
+            children: [],
+            productCount: 0
+          });
+        }
+        
+        categoryTree.get('Другое').children.push({
+          name: category,
+          children: [],
+          productCount: this.getProductCountForCategory(category)
+        });
       }
     });
 
@@ -85,33 +121,16 @@ class MarketplaceCategoryNavigator {
       if (categoryData.children.length > 0) {
         categoryData.productCount = categoryData.children.reduce(
           (sum, child) => sum + child.productCount, 0
-        ) + this.getProductCountForCategory(categoryName);
+        );
+      }
+      
+      // Удаляем пустые категории
+      if (categoryData.productCount === 0) {
+        categoryTree.delete(categoryName);
       }
     });
 
     this.categories = categoryTree;
-  }
-
-  /**
-   * Поиск родительской категории для подкатегории
-   */
-  findParentCategory(category, allCategories) {
-    const categoryWords = category.toLowerCase().split(/\s+/);
-    
-    // Ищем категории, которые могут быть родительскими
-    for (let other of allCategories) {
-      if (other === category) continue;
-      
-      const otherWords = other.toLowerCase().split(/\s+/);
-      
-      // Если текущая категория содержит слова из другой категории + дополнительные слова
-      if (otherWords.length < categoryWords.length && 
-          otherWords.every(word => categoryWords.includes(word))) {
-        return other;
-      }
-    }
-    
-    return null;
   }
 
   /**
@@ -131,9 +150,6 @@ class MarketplaceCategoryNavigator {
     const sidebar = document.getElementById('filters-sidebar');
     if (!sidebar) return;
 
-    // Сохраняем существующие фильтры
-    const existingFilters = sidebar.querySelector('.filters-content');
-    
     // Создаем контейнер для категорий
     const categoryNav = document.createElement('div');
     categoryNav.className = 'category-navigation';
@@ -164,8 +180,10 @@ class MarketplaceCategoryNavigator {
     if (this.currentCategory === null) {
       // Показываем все основные категории
       html += `<div class="category-item category-all" data-category="">
-        <span class="category-name">Все категории</span>
-        <span class="category-count">${this.catalog.products.length}</span>
+        <div class="category-main">
+          <span class="category-name">Все категории</span>
+          <span class="category-count">${this.catalog.products.length}</span>
+        </div>
       </div>`;
       
       this.categories.forEach((categoryData, categoryName) => {
@@ -176,7 +194,7 @@ class MarketplaceCategoryNavigator {
       const currentCategoryData = this.categories.get(this.currentCategory);
       if (currentCategoryData && currentCategoryData.children.length > 0) {
         currentCategoryData.children.forEach(child => {
-          html += this.generateCategoryItemHTML(child);
+          html += this.generateCategoryItemHTML(child, true);
         });
       }
     }
@@ -188,7 +206,19 @@ class MarketplaceCategoryNavigator {
   /**
    * Генерация HTML для отдельной категории
    */
-  generateCategoryItemHTML(categoryData) {
+  generateCategoryItemHTML(categoryData, isChild = false) {
+    if (isChild) {
+      // Для дочерних элементов показываем простую структуру
+      return `
+        <div class="category-item" data-category="${categoryData.name}">
+          <div class="category-main">
+            <span class="category-name">${categoryData.name}</span>
+            <span class="category-count">${categoryData.productCount}</span>
+          </div>
+        </div>
+      `;
+    }
+
     const hasChildren = categoryData.children && categoryData.children.length > 0;
     const isExpandable = hasChildren && categoryData.children.length > 6;
     const visibleChildren = isExpandable ? categoryData.children.slice(0, 6) : categoryData.children;
