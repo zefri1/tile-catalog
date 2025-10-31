@@ -1,53 +1,31 @@
-// Build hierarchical category tree (A > B > C)
-function buildHierTree(products){
-  const root = new Map();
+// Inject breadcrumbs-based category control
+function buildCategorySet(products){
+  const counts = new Map();
   for(const p of products){
-    const cats = Array.isArray(p.itemCategoryList)? p.itemCategoryList : [];
-    if(cats.length===0) continue;
-    for(const pathRaw of cats){
-      const parts = String(pathRaw).split('>').map(s=>s.trim()).filter(Boolean);
-      if(parts.length===0) continue;
-      let node = root;
-      let keyPath = '';
-      for(const part of parts){
-        keyPath = keyPath ? keyPath + ' > ' + part : part;
-        if(!node.has(part)) node.set(part, { name: part, key: keyPath, count:0, children: new Map() });
-        const entry = node.get(part);
-        entry.count++;
-        node = entry.children;
-      }
+    for(const c of (p.itemCategoryList||[])){
+      counts.set(c, (counts.get(c)||0)+1);
     }
   }
-  return root;
+  return Array.from(counts.entries()).sort((a,b)=>b[1]-a[1]);
 }
 
-function renderTree(map){
-  const entries = Array.from(map.values()).sort((a,b)=> b.count - a.count);
-  return entries.map(entry => {
-    const hasChildren = entry.children.size>0;
-    return `
-      <div class="cat-node" data-key="${entry.key}">
-        ${hasChildren? '<button class="cat-toggle" aria-label="Развернуть">▸</button>': '<span class="cat-toggle" style="opacity:.3">•</span>'}
-        <input type="checkbox" class="category-checkbox" value="${entry.key}">
-        <span class="category-name">${entry.name}</span>
-        <span class="category-count">${entry.count}</span>
-      </div>
-      ${hasChildren? `<div class="cat-children">${renderTree(entry.children)}</div>`: ''}
-    `;
+export function renderCategoryBreadcrumbs(products, selected = []){
+  const list = buildCategorySet(products);
+  const crumbs = ['Все категории', ...selected];
+  const crumbsHTML = crumbs.map((c,i)=>{
+    const label = i===0? 'Все категории' : c;
+    const active = i===crumbs.length-1? 'active' : '';
+    return `<span class="crumb ${active}" data-idx="${i}">${label}</span>${i<crumbs.length-1? '<span class="sep">›</span>':''}`;
   }).join('');
-}
 
-export function createHierCategoryFilter(products){
-  const tree = buildHierTree(products);
-  const html = `
+  const optionsHTML = list.map(([name,count])=>`<div class="category-item"><input type="checkbox" class="filter-checkbox" value="${name}"><span class="checkbox-text">${name}</span><span class="category-count">${count}</span></div>`).join('');
+
+  return `
     <div class="filter-group">
       <div class="category-filter">
-        <div class="category-header">
-          <span class="category-title">КАТЕГОРИЯ</span>
-          <button class="category-clear" onclick="catalog.clearCategoryFilter()">Сбросить</button>
-        </div>
-        <div class="category-tree">${renderTree(tree)}</div>
+        <div class="category-header"><span class="category-title">КАТЕГОРИЯ</span></div>
+        <div class="breadcrumbs" id="cat-breadcrumbs">${crumbsHTML}</div>
+        <div class="checkbox-group" id="category-filters">${optionsHTML}</div>
       </div>
     </div>`;
-  return html;
 }
