@@ -6,9 +6,7 @@ services:
   - type: web
     name: tile-catalog-web
     env: static
-    buildCommand: |
-      npm ci
-      npm run build
+    buildCommand: npm ci && npm run build
     staticPublishPath: dist
     pullRequestPreviewsEnabled: true
     headers:
@@ -36,10 +34,8 @@ services:
     env: node
     plan: free
     rootDir: server
-    buildCommand: |
-      npm ci
-    startCommand: |
-      node index.js
+    buildCommand: npm ci
+    startCommand: node index.js
     autoDeploy: true
     healthCheckPath: /healthz
     envVars:
