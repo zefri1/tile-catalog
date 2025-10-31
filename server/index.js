@@ -31,6 +31,7 @@ function parseCSV(text) {
 }
 
 function normalizeHeader(h){ return String(h||'').trim().toLowerCase(); }
+
 function cleanPrice(raw){
   if (raw == null) return 0;
   const s = String(raw).trim();
@@ -41,10 +42,26 @@ function cleanPrice(raw){
   return Math.round(val);
 }
 
+// Enhanced normalizer for multi-value fields
+function normArray(raw) {
+  if (!raw) return [];
+  const str = String(raw).trim();
+  if (!str || str === '0' || str === '-' || str.toLowerCase() === 'нет') return [];
+  
+  return str
+    .split(/,/)
+    .map(x => x.trim())
+    .filter(x => x && x.length > 1 && x.toLowerCase() !== 'нет' && x !== '0' && x !== '-')
+    .map(x => x.replace(/^[\s\-–—]+|[\s\-–—]+$/g, '').trim())
+    .filter(x => x.length > 1);
+}
+
 function parseCSVData(csvText){
   const rows = parseCSV(csvText);
   if (!rows || rows.length < 2) return { items: [], debug: 'empty' };
   const headers = rows[0].map(normalizeHeader);
+  
+  console.log('API CSV Headers:', headers);
 
   const idx = (names)=>{
     for (const n of names){ const k = headers.indexOf(n); if (k!==-1) return k; }
@@ -64,8 +81,13 @@ function parseCSVData(csvText){
     priceDiler: idx(['price.diler2','price diler2','price_diler2']),
     image: idx(['image']),
     stock: idx(['rest.moskow','stock']),
-    category: idx(['itemcategory','category'])
+    category: idx(['itemcategory','category']),
+    surface: idx(['itemsurface','surface']),
+    areas: idx(['areasofuse','areas']),
+    structures: idx(['surfacestructures','structures'])
   };
+  
+  console.log('API Column mapping:', col);
 
   const items=[]; let checked=0, validPrice=0, processed=0;
   const hasCheckbox = col.checkbox!==-1;
@@ -96,27 +118,52 @@ function parseCSVData(csvText){
 
     const image = r[col.image]||''; const img = (String(image).startsWith('http')? image:'');
     const stockRaw = r[col.stock]||'0'; let inStock=false; try{ inStock = parseFloat(String(stockRaw).replace(',','.'))>0.1; }catch{ inStock=false; }
+    
+    // Parse category and multi-value fields
+    const rawCategory = r[col.category] || '';
+    const categoryList = normArray(rawCategory);
+    const surfaceList = normArray(r[col.surface] || '');
+    const areasList = normArray(r[col.areas] || '');
+    const structList = normArray(r[col.structures] || '');
 
     items.push({
       id: r[col.id]||`item-${i}`,
       name,
       brand,
+      collection: r[col.collection]||'',
+      country: r[col.country]||'Не указана',
       color: r[col.color]||'Не указан',
+      size: nsize,
       price,
       description: String(full).slice(0,200)+(String(full).length>200?'...':''),
       image: img,
       inStock,
       onDemand: !inStock,
-      hidden:false,
-      phone:'',
-      category: r[col.category]||'Плитка',
-      collection: r[col.collection]||'',
-      country: r[col.country]||'',
-      size: nsize
+      hidden: false,
+      // Fields expected by frontend
+      itemCategory: rawCategory,
+      itemCategoryList: categoryList,
+      itemSurface: r[col.surface] || '',
+      itemSurfaceList: surfaceList,
+      areasOfUse: r[col.areas] || '',
+      areasOfUseList: areasList,
+      surfaceStruct: r[col.structures] || '',
+      surfaceStructList: structList
     });
     processed++;
+    
+    // Debug first few products
+    if (processed <= 5) {
+      console.log(`API Product ${processed}:`, {
+        name,
+        rawCategory: `"${rawCategory}"`,
+        categoryList,
+        price
+      });
+    }
   }
-
+  
+  console.log(`API parsed: ${items.length} items, ${items.filter(i => i.itemCategoryList.length > 0).length} with categories`);
   return { items, debug:{ totalRows: rows.length-1, checkedItems: checked, validPriceItems: validPrice, processedItems: processed, priceFrom: (col.priceRozn!==-1? 'Price.Roznichnaya': (col.priceDiler!==-1? 'Price.Diler2':'none')) } };
 }
 
@@ -124,14 +171,19 @@ app.get('/api/items', async (req,res)=>{
   try{
     const csvUrl = process.env.SHEET_CSV_URL;
     if(!csvUrl) return res.status(500).json({success:false,error:'SHEET_CSV_URL not set',items:[]});
-    const resp = await fetch(csvUrl,{headers:{'User-Agent':'TileCatalog/1.5'},timeout:20000});
+    console.log('API: Loading CSV from:', csvUrl);
+    const resp = await fetch(csvUrl,{headers:{'User-Agent':'TileCatalog/1.6'},timeout:20000});
     if(!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const csv = await resp.text();
+    console.log('API: CSV length:', csv.length);
     const result = parseCSVData(csv);
     res.set('Cache-Control','public, max-age=30');
     res.json({success:true,count:result.items.length,updated_at:new Date().toISOString(),debug:result.debug,items:result.items});
-  }catch(e){ res.status(500).json({success:false,error:e.message,items:[]}); }
+  }catch(e){ 
+    console.error('API Error:', e.message);
+    res.status(500).json({success:false,error:e.message,items:[]}); 
+  }
 });
 
-app.get('/healthz',(req,res)=>res.send('OK - v1.5 price parsing fixed with fallback'));
-app.listen(PORT,()=>{ console.log('🚀 API v1.5 running on',PORT); });
+app.get('/healthz',(req,res)=>res.send('OK - v1.6 with categories support'));
+app.listen(PORT,()=>{ console.log('🚀 API v1.6 running on',PORT); });
