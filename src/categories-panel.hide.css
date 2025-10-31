@@ -1,0 +1,4 @@
+/* Hide categories panel entirely (per request to remove left block) */
+.categories-panel{display:none!important}
+/* Also hide legacy if cached */
+.category-navigation{display:none!important}
