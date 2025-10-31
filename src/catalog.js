@@ -41,7 +41,7 @@ function parseCSVData(csvContent) {
   if (!rows || rows.length < 2) return [];
   
   const headers = rows[0].map(h => String(h || '').toLowerCase().trim());
-  console.log('CSV Headers:', headers); // Debug
+  console.log('CSV Headers:', headers);
   
   const idx = (name) => {
     const index = headers.findIndex(h => h.includes(name.toLowerCase()));
@@ -67,10 +67,10 @@ function parseCSVData(csvContent) {
     size: idx('size')
   };
   
-  console.log('Column mapping:', col); // Debug
+  console.log('Column mapping:', col);
   
   const data = rows.slice(1).filter(r => r && r.length > 0);
-  return data.map(r => {
+  return data.map((r, index) => {
     const product = {
       id: s(r[col.id]) || 'product-' + Math.random().toString(36).slice(2, 11),
       brand: cs(s(r[col.brand])) || 'Неизвестно',
@@ -95,14 +95,10 @@ function parseCSVData(csvContent) {
     };
     
     // Debug first few products
-    if (data.indexOf(r) < 3) {
-      console.log(`Product ${data.indexOf(r)}:`, {
-        itemSurface: product.itemSurface,
-        itemSurfaceList: product.itemSurfaceList,
-        areasOfUse: product.areasOfUse,
-        areasOfUseList: product.areasOfUseList,
-        surfaceStruct: product.surfaceStruct,
-        surfaceStructList: product.surfaceStructList
+    if (index < 3) {
+      console.log(`Product ${index}:`, {
+        itemCategory: product.itemCategory,
+        itemCategoryList: product.itemCategoryList
       });
     }
     
@@ -110,10 +106,48 @@ function parseCSVData(csvContent) {
   });
 }
 
+class CategoryTree {
+  constructor() {
+    this.root = new Map();
+    this.productsByCategory = new Map();
+  }
+  
+  addProduct(product, categoryList) {
+    categoryList.forEach(category => {
+      const trimmed = category.trim();
+      if (!trimmed) return;
+      
+      if (!this.root.has(trimmed)) {
+        this.root.set(trimmed, {
+          name: trimmed,
+          count: 0,
+          products: new Set()
+        });
+      }
+      
+      const node = this.root.get(trimmed);
+      node.products.add(product.id);
+      node.count = node.products.size;
+    });
+  }
+  
+  getCategories() {
+    return Array.from(this.root.values())
+      .sort((a, b) => b.count - a.count); // Sort by product count desc
+  }
+  
+  getProductsForCategory(categoryName) {
+    const node = this.root.get(categoryName);
+    return node ? Array.from(node.products) : [];
+  }
+}
+
 class TileCatalog {
   constructor() {
     this.products = []; this.filteredProducts = []; this.currentSort = 'price-asc'; this.currentView = 2;
-    this.filters = { search: '', brands: new Set(), colors: new Set(), countries: new Set(), categories: new Set(), surfaces: new Set(), uses: new Set(), structs: new Set(), priceMin: 0, priceMax: 1250 };
+    this.filters = { search: '', brands: new Set(), colors: new Set(), countries: new Set(), surfaces: new Set(), uses: new Set(), structs: new Set(), priceMin: 0, priceMax: 1250 };
+    this.categoryTree = new CategoryTree();
+    this.categoryState = { selectedCategories: new Set(), showLimit: 10 };
     this.isInitialized = false; this.batchSize = 40; this.renderIndex = 0;
   }
 
@@ -140,6 +174,7 @@ class TileCatalog {
     try {
       await this.loadProducts();
       console.log('Loaded products:', this.products.length);
+      this.buildCategoryTree();
       this.initializeFilters();
       this.bindEvents();
       this.applyFilters();
@@ -156,7 +191,6 @@ class TileCatalog {
     const API_URL = window.SHEET_JSON_URL || '/api/items';
     const FALLBACK_CSV = window.SHEET_CSV_URL;
     
-    // Try API first
     try {
       const response = await fetch(API_URL, { cache: 'no-store', headers: { 'Accept': 'application/json' } });
       if (response.ok) {
@@ -173,7 +207,6 @@ class TileCatalog {
       console.warn('API failed, using CSV', e.message);
     }
     
-    // Fallback CSV
     console.log('Loading CSV from:', FALLBACK_CSV);
     const response = await fetch(`${FALLBACK_CSV}&t=${Date.now()}`, { cache: 'no-store' });
     if (!response.ok) throw new Error('CSV load failed');
@@ -185,14 +218,17 @@ class TileCatalog {
     console.log('Final products after filtering:', this.products.length);
   }
 
+  buildCategoryTree() {
+    this.products.forEach(product => {
+      this.categoryTree.addProduct(product, product.itemCategoryList);
+    });
+    console.log('Category tree built, categories:', this.categoryTree.getCategories().length);
+  }
+
   initializeFilters() {
     const brands = [...new Set(this.products.map(p => p.brand))].filter(Boolean).sort();
     const colors = [...new Set(this.products.map(p => p.color))].filter(Boolean).sort();
     const countries = [...new Set(this.products.map(p => p.country))].filter(Boolean).sort();
-    
-    // Flatten and de-dup arrays
-    const allCats = [].concat(...this.products.map(p => p.itemCategoryList || []));
-    const categories = [...new Set(allCats)].filter(Boolean).sort();
     
     const allSurfs = [].concat(...this.products.map(p => p.itemSurfaceList || []));
     const surfaces = [...new Set(allSurfs)].filter(Boolean).sort();
@@ -203,21 +239,74 @@ class TileCatalog {
     const allStructs = [].concat(...this.products.map(p => p.surfaceStructList || []));
     const structs = [...new Set(allStructs)].filter(Boolean).sort();
     
-    console.log('Filter data:', { brands: brands.length, colors: colors.length, countries: countries.length, categories: categories.length, surfaces: surfaces.length, uses: uses.length, structs: structs.length });
+    console.log('Filter data:', { brands: brands.length, colors: colors.length, countries: countries.length, surfaces: surfaces.length, uses: uses.length, structs: structs.length });
     
-    this.createFiltersUI(brands, colors, countries, categories, surfaces, uses, structs);
+    this.createFiltersUI(brands, colors, countries, surfaces, uses, structs);
     
     const prices = this.products.map(p => p.price).filter(p => p > 0);
     this.filters.priceMin = Math.min(...prices);
     this.filters.priceMax = Math.max(...prices);
   }
 
-  createFiltersUI(brands, colors, countries, categories, surfaces, uses, structs) {
+  createCategoryFilter() {
+    const categories = this.categoryTree.getCategories();
+    const visibleCategories = categories.slice(0, this.categoryState.showLimit);
+    const hiddenCount = Math.max(0, categories.length - this.categoryState.showLimit);
+    
+    return `
+      <div class="filter-group">
+        <div class="category-filter">
+          <div class="category-header">
+            <span class="category-title">КАТЕГОРИЯ</span>
+            <button class="category-clear" onclick="catalog.clearCategoryFilter()">Сбросить</button>
+          </div>
+          
+          ${this.categoryState.selectedCategories.size > 0 ? `
+            <div class="breadcrumb-nav">
+              <ul class="breadcrumbs">
+                <li class="breadcrumb-item">
+                  <button class="breadcrumb-link" onclick="catalog.clearCategoryFilter()">Все категории</button>
+                </li>
+                ${Array.from(this.categoryState.selectedCategories).map(cat => `
+                  <li class="breadcrumb-item">
+                    <span class="breadcrumb-separator">›</span>
+                    <span class="breadcrumb-current">${cat}</span>
+                  </li>
+                `).join('')}
+              </ul>
+            </div>
+          ` : ''}
+          
+          <div class="category-list">
+            ${visibleCategories.map(cat => {
+              const isSelected = this.categoryState.selectedCategories.has(cat.name);
+              return `
+                <div class="category-item">
+                  <input type="checkbox" class="category-checkbox" 
+                    value="${cat.name}" ${isSelected ? 'checked' : ''}>
+                  <span class="category-name">${cat.name}</span>
+                  <span class="category-count">${cat.count}</span>
+                </div>
+              `;
+            }).join('')}
+            
+            ${hiddenCount > 0 ? `
+              <button class="show-more-btn" onclick="catalog.showMoreCategories()">
+                Ещё ${hiddenCount} категорий
+              </button>
+            ` : ''}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  createFiltersUI(brands, colors, countries, surfaces, uses, structs) {
     const sidebar = document.getElementById('filters-sidebar');
     if (!sidebar) return;
     
     const createFilterGroup = (title, items, id) => {
-      if (items.length === 0) return ''; // Skip empty groups
+      if (items.length === 0) return '';
       return `
         <div class="filter-group">
           <label class="filter-label">${title}:</label>
@@ -245,8 +334,8 @@ class TileCatalog {
             <label class="filter-label" for="search-input">ПОИСК:</label>
             <input type="text" id="search-input" class="search-input" placeholder="Введите название..." autocomplete="off">
           </div>
+          ${this.createCategoryFilter()}
           ${createFilterGroup('СТРАНА', countries, 'country-filters')}
-          ${createFilterGroup('КАТЕГОРИЯ', categories, 'category-filters')}
           ${createFilterGroup('ТИП ПОВЕРХНОСТИ', surfaces, 'surface-filters')}
           ${createFilterGroup('ОБЛАСТЬ ПРИМЕНЕНИЯ', uses, 'use-filters')}
           ${createFilterGroup('СТРУКТУРА ПОВЕРХНОСТИ', structs, 'struct-filters')}
@@ -257,6 +346,41 @@ class TileCatalog {
     `;
   }
 
+  clearCategoryFilter() {
+    this.categoryState.selectedCategories.clear();
+    this.categoryState.showLimit = 10;
+    this.applyFilters();
+    this.refreshCategoryFilter();
+  }
+  
+  showMoreCategories() {
+    this.categoryState.showLimit += 10;
+    this.refreshCategoryFilter();
+  }
+  
+  refreshCategoryFilter() {
+    const filterGroup = document.querySelector('.category-filter').parentElement;
+    const newCategoryHTML = this.createCategoryFilter();
+    filterGroup.innerHTML = newCategoryHTML;
+    this.bindCategoryEvents();
+  }
+
+  bindCategoryEvents() {
+    // Category checkboxes
+    document.querySelectorAll('.category-checkbox').forEach(cb => {
+      cb.addEventListener('change', (e) => {
+        const categoryName = e.target.value;
+        if (e.target.checked) {
+          this.categoryState.selectedCategories.add(categoryName);
+        } else {
+          this.categoryState.selectedCategories.delete(categoryName);
+        }
+        this.applyFilters();
+        this.refreshCategoryFilter();
+      });
+    });
+  }
+
   bindEvents() {
     // Search
     const searchInput = document.getElementById('search-input');
@@ -265,12 +389,14 @@ class TileCatalog {
       this.applyFilters();
     });
     
-    // Filter generic - bind to all filter checkboxes
+    // Category events
+    this.bindCategoryEvents();
+    
+    // Other filter events
     const filterMappings = [
       ['#brand-filters', 'brands'],
       ['#color-filters', 'colors'],
       ['#country-filters', 'countries'],
-      ['#category-filters', 'categories'],
       ['#surface-filters', 'surfaces'],
       ['#use-filters', 'uses'],
       ['#struct-filters', 'structs']
@@ -299,9 +425,12 @@ class TileCatalog {
       Object.keys(this.filters).forEach(k => {
         if (this.filters[k] instanceof Set) this.filters[k].clear();
       });
-      document.querySelectorAll('.filter-checkbox').forEach(cb => cb.checked = false);
+      this.categoryState.selectedCategories.clear();
+      this.categoryState.showLimit = 10;
+      document.querySelectorAll('.filter-checkbox, .category-checkbox').forEach(cb => cb.checked = false);
       if (searchInput) searchInput.value = '';
       this.applyFilters();
+      this.refreshCategoryFilter();
     });
     
     // Sort
@@ -356,10 +485,17 @@ class TileCatalog {
       );
     }
     
+    // Category filter - если выбраны категории
+    if (this.categoryState.selectedCategories.size > 0) {
+      filtered = filtered.filter(p => {
+        return (p.itemCategoryList || []).some(cat => 
+          this.categoryState.selectedCategories.has(cat)
+        );
+      });
+    }
+    
     // Страна
     if (s.countries.size > 0) filtered = filtered.filter(p => s.countries.has(p.country));
-    // Категория (любая выбранная)
-    if (s.categories.size > 0) filtered = filtered.filter(p => (p.itemCategoryList || []).some(x => s.categories.has(x)));
     // Тип поверхности
     if (s.surfaces.size > 0) filtered = filtered.filter(p => (p.itemSurfaceList || []).some(x => s.surfaces.has(x)));
     // Область применения
@@ -522,5 +658,6 @@ if (document.readyState === 'loading') {
   catalog = new TileCatalog();
   catalog.init();
 }
+window.catalog = catalog;
 window.TileCatalog = catalog;
 export default TileCatalog;
