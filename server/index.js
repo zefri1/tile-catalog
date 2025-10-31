@@ -8,98 +8,158 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// Парсинг CSV с правильной обработкой чекбоксов
-function parseCSV(csvText) {
-  const lines = csvText.split(/\r?\n/).filter(line => line.trim());
-  if (lines.length < 2) return { items: [], debug: 'Empty CSV' };
+// Правильный CSV парсер с обработкой кавычек (как в frontend)
+function parseCSV(text) {
+  const rows = [];
+  let i = 0, field = '', row = [], inQuotes = false;
   
-  const headers = lines[0].split(/[;,]/).map(h => h.trim().toLowerCase());
-  const items = [];
-  
-  // Поиск колонки с чекбоксами  
-  const checkboxColumnIndex = headers.findIndex(h => 
-    h.includes('на_сайт') || 
-    h.includes('насайт') ||
-    h.includes('сайт') || 
-    h === 'checkbox'
-  );
-  
-  const hasCheckboxColumn = checkboxColumnIndex !== -1;
-  let checkedCount = 0;
-  let validPriceCount = 0;
-  
-  console.log('📊 CSV Headers:', headers.slice(0, 12));
-  
-  if (hasCheckboxColumn) {
-    console.log(`☑️ Checkbox column found at index ${checkboxColumnIndex}: "${headers[checkboxColumnIndex]}"`);
+  while (i < text.length) {
+    const c = text[i];
+    
+    if (inQuotes) {
+      if (c === '"') {
+        if (text[i + 1] === '"') { 
+          field += '"'; 
+          i += 2; 
+          continue; 
+        }
+        inQuotes = false; 
+        i++; 
+        continue;
+      }
+      field += c; 
+      i++; 
+      continue;
+    }
+    
+    if (c === '"') { 
+      inQuotes = true; 
+      i++; 
+      continue; 
+    }
+    
+    if (c === ',' || c === ';') { 
+      row.push(field.trim()); 
+      field = ''; 
+      i++; 
+      continue; 
+    }
+    
+    if (c === '\n') { 
+      row.push(field.trim()); 
+      if (row.length > 0) rows.push(row); 
+      row = []; 
+      field = ''; 
+      i++; 
+      continue; 
+    }
+    
+    if (c === '\r') { 
+      i++; 
+      continue; 
+    }
+    
+    field += c; 
+    i++;
   }
   
-  // Маппинг основных колонок
+  // Добавляем последнее поле и строку
+  if (field || row.length > 0) {
+    row.push(field.trim());
+    if (row.length > 0) rows.push(row);
+  }
+  
+  return rows;
+}
+
+// Парсинг данных в JSON формат с поддержкой чекбоксов
+function parseCSVData(csvText) {
+  const rows = parseCSV(csvText);
+  if (!rows || rows.length < 2) {
+    return { items: [], debug: 'Empty CSV after parsing' };
+  }
+  
+  const headers = rows[0].map(h => String(h || '').toLowerCase().trim());
+  console.log('📊 Full CSV Headers:', headers);
+  
+  // Поиск колонок по именам
+  const getColumnIndex = (names) => {
+    for (const name of names) {
+      const index = headers.findIndex(h => h === name || h.includes(name));
+      if (index !== -1) return index;
+    }
+    return -1;
+  };
+  
   const columnIndexes = {
-    checkbox: checkboxColumnIndex,
-    id: headers.indexOf('id'),
-    brand: headers.indexOf('brand'),
-    fullname: headers.indexOf('fullname'),
-    collection: headers.indexOf('collection'),
-    country: headers.indexOf('country'),
-    color: headers.indexOf('color'),
-    size: headers.indexOf('size'),
-    priceRozn: headers.indexOf('price.roznichnaya'),
-    image: headers.indexOf('image'),
-    stock: headers.indexOf('rest.moskow'),
-    byOrder: headers.indexOf('byorder'),
-    category: headers.indexOf('itemcategory'),
-    weight: headers.indexOf('weight')
+    checkbox: getColumnIndex(['на_сайт', 'насайт', 'checkbox', 'сайт']),
+    id: getColumnIndex(['id']),
+    brand: getColumnIndex(['brand']),
+    fullname: getColumnIndex(['fullname', 'name']),
+    collection: getColumnIndex(['collection']),
+    country: getColumnIndex(['country']),
+    color: getColumnIndex(['color']),
+    size: getColumnIndex(['size']),
+    price: getColumnIndex(['price.roznichnaya', 'price roznichnaya', 'price_roznichnaya', 'price']),
+    image: getColumnIndex(['image']),
+    stock: getColumnIndex(['rest.moskow', 'rest moskow', 'stock']),
+    byOrder: getColumnIndex(['byorder', 'by_order']),
+    category: getColumnIndex(['itemcategory', 'item_category', 'category'])
   };
   
   console.log('🗂️ Column mapping:', columnIndexes);
   
-  for (let i = 1; i < lines.length; i++) {
-    const values = lines[i].split(/[;,]/).map(v => (v || '').trim().replace(/^"(.*)"$/, '$1'));
-    
-    if (values.length < 3) continue;
+  const items = [];
+  let checkedCount = 0;
+  let validPriceCount = 0;
+  let processedCount = 0;
+  
+  const hasCheckboxColumn = columnIndexes.checkbox !== -1;
+  
+  for (let i = 1; i < rows.length; i++) {
+    const row = rows[i];
+    if (!row || row.length < 3) continue;
     
     try {
       // Проверяем чекбокс
-      let isVisibleOnSite = true;
+      let showOnSite = true;
       
-      if (hasCheckboxColumn && values.length > checkboxColumnIndex) {
-        const checkboxValue = values[checkboxColumnIndex];
+      if (hasCheckboxColumn) {
+        const checkboxValue = (row[columnIndexes.checkbox] || '').trim();
         
         if (checkboxValue === 'TRUE' || checkboxValue === 'true' || checkboxValue === '1') {
           checkedCount++;
-          isVisibleOnSite = true;
+          showOnSite = true;
         } else if (checkboxValue === 'FALSE' || checkboxValue === 'false' || checkboxValue === '0') {
-          isVisibleOnSite = false;
+          showOnSite = false;
         } else {
-          // Пустой чекбокс - показываем
-          isVisibleOnSite = true;
+          // Пустой чекбокс - показываем для совместимости
+          showOnSite = true;
         }
       }
       
-      if (!isVisibleOnSite) continue;
+      if (!showOnSite) continue;
       
       // Извлекаем данные
-      const id = values[columnIndexes.id] || `item-${i}`;
-      const brand = values[columnIndexes.brand] || 'Без бренда';
-      const fullName = values[columnIndexes.fullname] || '';
-      const collection = values[columnIndexes.collection] || '';
-      const country = values[columnIndexes.country] || '';
-      const color = values[columnIndexes.color] || 'Не указан';
-      const size = values[columnIndexes.size] || '';
-      const category = values[columnIndexes.category] || 'Плитка';
-      const imageUrl = values[columnIndexes.image] || '';
+      const id = row[columnIndexes.id] || `item-${i}`;
+      const brand = row[columnIndexes.brand] || 'Без бренда';
+      const fullName = row[columnIndexes.fullname] || '';
+      const collection = row[columnIndexes.collection] || '';
+      const country = row[columnIndexes.country] || '';
+      const color = row[columnIndexes.color] || 'Не указан';
+      const size = row[columnIndexes.size] || '';
+      const imageUrl = row[columnIndexes.image] || '';
       
-      // КРИТИЧНО: Парсим цену более надёжно
+      // КРИТИЧНО: Парсим цену из ПРАВИЛЬНОЙ колонки
       let price = 0;
-      if (columnIndexes.priceRozn >= 0) {
-        const priceRaw = values[columnIndexes.priceRozn];
-        if (priceRaw && priceRaw !== 'FALSE' && priceRaw !== '') {
+      if (columnIndexes.price >= 0) {
+        const priceRaw = row[columnIndexes.price] || '';
+        if (priceRaw && priceRaw !== 'FALSE') {
           try {
-            // Убираем все кроме цифр, точек и запятых
+            // Убираем всё кроме цифр, точек и запятых
             const cleanPrice = priceRaw.toString()
-              .replace(/[^\d.,]/g, '') // Убираем ₽, пробелы и т.д.
-              .replace(',', '.'); // Заменяем запятую на точку
+              .replace(/[^\\d.,]/g, '')
+              .replace(',', '.');
             
             const parsed = parseFloat(cleanPrice);
             if (!isNaN(parsed) && parsed > 0) {
@@ -107,18 +167,17 @@ function parseCSV(csvText) {
               validPriceCount++;
             }
           } catch (e) {
-            console.log(`⚠️ Price parsing error for row ${i}: "${priceRaw}" -> 0`);
+            console.log(`⚠️ Price parsing error for row ${i}: "${priceRaw}"`);
           }
         }
       }
       
-      // Пропускаем только если цена явно 0 или отрицательная
       if (price <= 0) {
-        console.log(`❌ Skipping item ${i}: price=${price}, raw="${values[columnIndexes.priceRozn]}"`);
+        console.log(`❌ Row ${i}: No valid price. Raw: "${row[columnIndexes.price]}"`);
         continue;
       }
       
-      // Обрабатываем размер
+      // Обработка размера
       let normalizedSize = size;
       if (size) {
         const sizeMatch = size.match(/(\\d+)[x×x](\\d+)/);
@@ -131,9 +190,9 @@ function parseCSV(csvText) {
       let name = fullName;
       if (name) {
         name = name
-          .replace(/\\s*\\([^)]*\\)/g, '') // Убираем скобки
-          .replace(new RegExp(`^${brand}\\s+`, 'i'), '') // Убираем дублирующийся бренд
-          .replace(/^(керамогранит|плитка керамическая|плитка)\\s+/i, '') // Убираем типы
+          .replace(/\\s*\\([^)]*\\)/g, '')
+          .replace(new RegExp(`^${brand}\\\\s+`, 'i'), '')
+          .replace(/^(керамогранит|плитка керамическая|плитка)\\s+/i, '')
           .trim();
       }
       
@@ -145,18 +204,17 @@ function parseCSV(csvText) {
         name = name.substring(0, 57) + '...';
       }
       
-      // Определяем наличие (упрощённо)
-      const stockRaw = values[columnIndexes.stock] || '0';
+      // Определяем наличие
       let hasStock = false;
-      try {
-        const stockQty = parseFloat(stockRaw.toString().replace(',', '.'));
-        hasStock = stockQty > 0.1;
-      } catch (e) {
-        hasStock = false;
+      if (columnIndexes.stock >= 0) {
+        const stockRaw = row[columnIndexes.stock] || '0';
+        try {
+          const stockQty = parseFloat(stockRaw.toString().replace(',', '.'));
+          hasStock = stockQty > 0.1;
+        } catch (e) {
+          hasStock = false;
+        }
       }
-      
-      // Если нет в наличии, считаем что под заказ (если есть цена)
-      const isOnDemand = !hasStock && price > 0;
       
       const item = {
         id: id,
@@ -167,19 +225,17 @@ function parseCSV(csvText) {
         description: fullName.substring(0, 200) + (fullName.length > 200 ? '...' : ''),
         image: imageUrl && imageUrl.startsWith('http') ? imageUrl : '',
         inStock: hasStock,
-        onDemand: isOnDemand,
+        onDemand: !hasStock,
         hidden: false,
         phone: '',
-        category: category,
+        category: row[columnIndexes.category] || 'Плитка',
         collection: collection,
         country: country,
         size: normalizedSize
       };
       
-      // Добавляем ЛЮБОЙ товар с валидной ценой
-      if (price > 0) {
-        items.push(item);
-      }
+      items.push(item);
+      processedCount++;
       
     } catch (error) {
       console.error(`Error processing row ${i}:`, error.message);
@@ -188,12 +244,14 @@ function parseCSV(csvText) {
   }
   
   const debugInfo = {
-    totalRows: lines.length - 1,
+    totalRows: rows.length - 1,
     hasCheckboxColumn: hasCheckboxColumn,
-    checkboxColumnName: hasCheckboxColumn ? headers[checkboxColumnIndex] : 'None',
+    checkboxColumnName: hasCheckboxColumn ? headers[columnIndexes.checkbox] : 'None',
     checkedItems: checkedCount,
     validPriceItems: validPriceCount,
-    processedItems: items.length
+    processedItems: processedCount,
+    priceColumnIndex: columnIndexes.price,
+    priceColumnName: columnIndexes.price >= 0 ? headers[columnIndexes.price] : 'Not found'
   };
   
   return {
@@ -215,11 +273,11 @@ app.get('/api/items', async (req, res) => {
       });
     }
     
-    console.log(`[${new Date().toISOString()}] Fetching CSV from:`, csvUrl);
+    console.log(`[${new Date().toISOString()}] 🚀 Fetching CSV from:`, csvUrl);
     
     const response = await fetch(csvUrl, {
       headers: {
-        'User-Agent': 'TileCatalog/1.3'
+        'User-Agent': 'TileCatalog/1.4'
       },
       timeout: 20000
     });
@@ -229,21 +287,21 @@ app.get('/api/items', async (req, res) => {
     }
     
     const csvText = await response.text();
-    console.log(`[${new Date().toISOString()}] CSV length:`, csvText.length);
+    console.log(`[${new Date().toISOString()}] 📄 CSV length:`, csvText.length, 'chars');
     
-    const parseResult = parseCSV(csvText);
+    const parseResult = parseCSVData(csvText);
     const items = parseResult.items;
     
-    console.log(`[${new Date().toISOString()}] Debug:`, parseResult.debug);
-    console.log(`[${new Date().toISOString()}] Final result: ${items.length} items`);
+    console.log(`[${new Date().toISOString()}] 📊 Parse Result:`, parseResult.debug);
+    console.log(`[${new Date().toISOString()}] 🎯 FINAL: ${items.length} items ready for catalog`);
     
     if (items.length > 0) {
-      console.log('✅ Sample items:', items.slice(0, 3).map(i => `${i.name} - ${i.price}₽ (${i.brand})`));
+      console.log('✅ Success! Sample items:', 
+        items.slice(0, 3).map(i => `"${i.name}" - ${i.price}₽ (${i.brand})`));
     } else {
-      console.log('❌ No items processed - check price column format');
+      console.log('❌ No valid items found. Check price column format or checkbox values.');
     }
     
-    // Короткий кэш для быстрых обновлений
     res.set('Cache-Control', 'public, max-age=30');
     res.set('Content-Type', 'application/json');
     
@@ -253,13 +311,13 @@ app.get('/api/items', async (req, res) => {
       updated_at: new Date().toISOString(),
       debug: parseResult.debug,
       note: items.length > 0 ? 
-        `Показано ${items.length} товаров с валидной ценой из ${parseResult.debug.checkedItems} отмеченных чекбоксом` :
-        'Нет товаров с валидной ценой - проверьте формат колонки Price.Roznichnaya',
+        `Показано ${items.length} товаров из ${parseResult.debug.checkedItems} отмеченных чекбоксом` :
+        'Нет товаров с валидной ценой - проверьте колонку Price.Roznichnaya',
       items: items
     });
     
   } catch (error) {
-    console.error(`[${new Date().toISOString()}] Error:`, error.message);
+    console.error(`[${new Date().toISOString()}] ❌ ERROR:`, error.message);
     
     res.status(500).json({
       success: false,
@@ -272,17 +330,18 @@ app.get('/api/items', async (req, res) => {
 });
 
 app.get('/healthz', (req, res) => {
-  res.status(200).send('OK - Tile Catalog API v1.3');
+  res.status(200).send('OK - Tile Catalog API v1.4 with proper CSV parser');
 });
 
 app.get('/', (req, res) => {
   res.json({
     service: 'Tile Catalog API',
-    version: '1.3.0',
-    status: 'All checked items with valid price shown',
-    features: ['checkbox-control', 'enhanced-price-parsing', 'debug-info'],
+    version: '1.4.0',
+    status: 'Fixed CSV parsing with quotes handling',
+    features: ['proper-csv-parser', 'checkbox-control', 'column-name-lookup', 'debug-info'],
+    fix: 'Resolved infinite loading by implementing correct CSV parser with quotes support',
     endpoints: {
-      '/api/items': 'GET - получить все отмеченные товары с валидной ценой',
+      '/api/items': 'GET - получить все отмеченные товары с корректной ценой',
       '/healthz': 'GET - проверка работоспособности'
     },
     timestamp: new Date().toISOString()
@@ -298,10 +357,11 @@ app.use('*', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`🚀 Tile Catalog API v1.3.0 running on port ${PORT}`);
-  console.log(`🎯 New logic: Show ALL checked items with valid price (ignore stock)`);
+  console.log(`🚀 Tile Catalog API v1.4.0 running on port ${PORT}`);
+  console.log(`🛠️ FIXED: Proper CSV parser with quotes handling`);
+  console.log(`🎯 Should now load ALL checked items with valid prices`);
   console.log(`📋 Health check: http://localhost:${PORT}/healthz`);
-  console.log(`🔗 Items API: http://localhost:${PORT}/api/items`);
+  console.log(`📊 Items API: http://localhost:${PORT}/api/items`);
   
   if (!process.env.SHEET_CSV_URL) {
     console.warn('⚠️ SHEET_CSV_URL not set - API will return error');
