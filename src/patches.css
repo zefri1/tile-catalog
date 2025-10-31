@@ -1,27 +1,4 @@
-/* Align sort and view on one row on mobile, with results below */
-@media (max-width: 768px){
-  .controls-box{
-    display:flex;
-    flex-wrap:wrap;
-    align-items:center;
-    gap:.75rem 1rem;
-  }
-  /* Left: sort, Right: view */
-  .controls-box .sort-control{order:1; flex:1 1 auto; min-width: 180px;}
-  .controls-box .view-controls{order:2; margin-left:auto; flex:0 0 auto;}
-  /* Results below across full width */
-  .controls-box .results-info{order:3; width:100%; text-align:center; margin-top:.25rem}
-}
-
-/* Keep desktop intact */
-@media (min-width: 769px){
-  .controls-box{display:flex; align-items:center; justify-content:space-between}
-}
-
-/* New: enforce scroll for filter lists */
-#filters-sidebar .checkbox-group{max-height:180px;overflow-y:auto;scrollbar-width:thin}
-#filters-sidebar .checkbox-item{display:flex;align-items:center;gap:.6rem;padding:.25rem 0}
-#filters-sidebar .filter-checkbox{width:16px;height:16px;accent-color:var(--color-primary)}
-#filters-sidebar .filters-content{gap:1rem}
-#filters-sidebar .filter-group{padding-bottom:.25rem;border-bottom:1px dashed var(--color-border-light)}
-#filters-sidebar .filter-group:last-child{border-bottom:0}
+/* stronger scroll enforcement for filters (in case of nested wrappers) */
+#filters-sidebar, #filters-sidebar * { overscroll-behavior: contain; }
+#filters-sidebar .checkbox-group{max-height:220px!important; overflow-y:auto!important; -webkit-overflow-scrolling:touch}
+#filters-sidebar .checkbox-group .checkbox-item{white-space:nowrap}
