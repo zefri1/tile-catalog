@@ -16,8 +16,8 @@ export default defineConfig({
           if (/png|jpe?g|svg|gif|tiff|bmp|ico/i.test(extType)) extType = 'img';
           return `assets/${extType}/[name]-[hash][extname]`;
         },
-        chunkFileNames: 'assets/js/[name]-[hash].js',
-        entryFileNames: 'assets/js/[name]-[hash].js',
+        chunkFileNames: 'assets/js/chunk-[hash].js',
+        entryFileNames: 'assets/js/main-[hash].js',
       },
     },
     cssCodeSplit: true,
