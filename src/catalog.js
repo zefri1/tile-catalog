@@ -25,10 +25,15 @@ function parseCSV(text) {
 // Enhanced normalizer for multi-value fields
 function normArray(raw) {
   if (!raw) return [];
-  return String(raw)
-    .split(/[;,|]/)
+  const str = String(raw).trim();
+  if (!str || str === '0' || str === '-' || str.toLowerCase() === 'нет') return [];
+  
+  return str
+    .split(/[;,|\n\r]+/)
     .map(x => x.replace(/[-–—]/g, '').trim())
-    .filter(x => x && x.length > 0 && x.toLowerCase() !== 'нет' && x !== '0' && x !== '-');
+    .filter(x => x && x.length > 0 && x.toLowerCase() !== 'нет' && x !== '0' && x !== '-')
+    .map(x => x.replace(/^[\s\-–—]+|[\s\-–—]+$/g, ''))
+    .filter(x => x.length > 0);
 }
 
 function s(v) { return v ? String(v).trim() : '' }
@@ -48,6 +53,20 @@ function parseCSVData(csvContent) {
     return index !== -1 ? index : -1;
   };
   
+  // Better category column detection
+  const findCategoryColumn = () => {
+    const patterns = ['itemcategory', 'category', 'категория', 'categories', 'item_category'];
+    for (const pattern of patterns) {
+      const index = headers.findIndex(h => h.includes(pattern.toLowerCase()));
+      if (index !== -1) {
+        console.log(`Found category column at index ${index}: ${headers[index]}`);
+        return index;
+      }
+    }
+    console.warn('Category column not found in headers:', headers);
+    return -1;
+  };
+  
   const col = {
     id: idx('id'),
     brand: idx('brand'),
@@ -55,7 +74,7 @@ function parseCSVData(csvContent) {
     country: idx('country'),
     fullname: idx('fullname'),
     color: idx('color'),
-    itemcategory: idx('itemcategory'),
+    itemcategory: findCategoryColumn(),
     itemsurface: idx('itemsurface'),
     areasofuse: idx('areasofuse'),
     surfacestructures: idx('surfacestructures'),
@@ -71,6 +90,9 @@ function parseCSVData(csvContent) {
   
   const data = rows.slice(1).filter(r => r && r.length > 0);
   return data.map((r, index) => {
+    const rawCategory = col.itemcategory !== -1 ? r[col.itemcategory] : '';
+    const categoryList = normArray(rawCategory);
+    
     const product = {
       id: s(r[col.id]) || 'product-' + Math.random().toString(36).slice(2, 11),
       brand: cs(s(r[col.brand])) || 'Неизвестно',
@@ -79,8 +101,8 @@ function parseCSVData(csvContent) {
       name: cs(s(r[col.fullname])) || 'Без названия',
       color: cs(s(r[col.color])) || 'Не указан',
       size: cs(s(r[col.size])) || '',
-      itemCategory: cs(s(r[col.itemcategory])) || '',
-      itemCategoryList: normArray(r[col.itemcategory]),
+      itemCategory: cs(rawCategory) || '',
+      itemCategoryList: categoryList,
       itemSurface: cs(s(r[col.itemsurface])) || '',
       itemSurfaceList: normArray(r[col.itemsurface]),
       areasOfUse: cs(s(r[col.areasofuse])) || '',
@@ -95,10 +117,12 @@ function parseCSVData(csvContent) {
     };
     
     // Debug first few products
-    if (index < 3) {
+    if (index < 5) {
       console.log(`Product ${index}:`, {
+        rawCategory,
         itemCategory: product.itemCategory,
-        itemCategoryList: product.itemCategoryList
+        itemCategoryList: product.itemCategoryList,
+        name: product.name
       });
     }
     
@@ -113,11 +137,11 @@ class CategoryTree {
   }
   
   addProduct(product, categoryList) {
-    if (!categoryList || !Array.isArray(categoryList)) return;
+    if (!categoryList || !Array.isArray(categoryList) || categoryList.length === 0) return;
     
     categoryList.forEach(category => {
       const trimmed = category.trim();
-      if (!trimmed) return;
+      if (!trimmed || trimmed.length < 2) return;
       
       if (!this.root.has(trimmed)) {
         this.root.set(trimmed, {
@@ -134,8 +158,12 @@ class CategoryTree {
   }
   
   getCategories() {
-    return Array.from(this.root.values())
-      .sort((a, b) => b.count - a.count); // Sort by product count desc
+    const categories = Array.from(this.root.values())
+      .filter(cat => cat.count > 0)
+      .sort((a, b) => b.count - a.count);
+    
+    console.log('Available categories:', categories.map(c => `${c.name} (${c.count})`));
+    return categories;
   }
   
   getProductsForCategory(categoryName) {
@@ -149,7 +177,7 @@ class TileCatalog {
     this.products = []; this.filteredProducts = []; this.currentSort = 'price-asc'; this.currentView = 2;
     this.filters = { search: '', brands: new Set(), colors: new Set(), countries: new Set(), surfaces: new Set(), uses: new Set(), structs: new Set(), priceMin: 0, priceMax: 1250 };
     this.categoryTree = new CategoryTree();
-    this.categoryState = { selectedCategories: new Set(), showLimit: 10 };
+    this.categoryState = { selectedCategories: new Set(), showLimit: 15 };
     this.isInitialized = false; this.batchSize = 40; this.renderIndex = 0;
   }
 
@@ -226,12 +254,17 @@ class TileCatalog {
       return;
     }
     
+    let categoryCount = 0;
     this.products.forEach(product => {
-      if (product && product.itemCategoryList) {
+      if (product && product.itemCategoryList && product.itemCategoryList.length > 0) {
         this.categoryTree.addProduct(product, product.itemCategoryList);
+        categoryCount++;
       }
     });
-    console.log('Category tree built, categories:', this.categoryTree.getCategories().length);
+    
+    const categories = this.categoryTree.getCategories();
+    console.log(`Category tree built: ${categories.length} categories from ${categoryCount} products`);
+    console.log('Top categories:', categories.slice(0, 10).map(c => `${c.name} (${c.count})`));
   }
 
   initializeFilters() {
@@ -267,12 +300,30 @@ class TileCatalog {
     const visibleCategories = categories.slice(0, this.categoryState.showLimit);
     const hiddenCount = Math.max(0, categories.length - this.categoryState.showLimit);
     
+    if (categories.length === 0) {
+      return `
+        <div class="filter-group">
+          <div class="category-filter">
+            <div class="category-header">
+              <span class="category-title">КАТЕГОРИЯ</span>
+            </div>
+            <div class="category-list">
+              <div style="color: var(--color-text-muted); font-size: 0.8rem; text-align: center; padding: 1rem;">
+                Категории не найдены
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    
     return `
       <div class="filter-group">
         <div class="category-filter">
           <div class="category-header">
             <span class="category-title">КАТЕГОРИЯ</span>
-            <button class="category-clear" onclick="catalog.clearCategoryFilter()">Сбросить</button>
+            ${this.categoryState.selectedCategories.size > 0 ? 
+              '<button class="category-clear" onclick="catalog.clearCategoryFilter()">Сбросить</button>' : ''}
           </div>
           
           ${this.categoryState.selectedCategories.size > 0 ? `
@@ -297,8 +348,8 @@ class TileCatalog {
               return `
                 <div class="category-item">
                   <input type="checkbox" class="category-checkbox" 
-                    value="${cat.name}" ${isSelected ? 'checked' : ''}>
-                  <span class="category-name">${cat.name}</span>
+                    value="${cat.name}" ${isSelected ? 'checked' : ''} id="cat-${cat.name.replace(/\s+/g, '-')}">
+                  <label for="cat-${cat.name.replace(/\s+/g, '-')}" class="category-name">${cat.name}</label>
                   <span class="category-count">${cat.count}</span>
                 </div>
               `;
@@ -325,10 +376,10 @@ class TileCatalog {
         <div class="filter-group">
           <label class="filter-label">${title}:</label>
           <div class="checkbox-group scrollable" id="${id}">
-            ${items.map(val => `
+            ${items.map((val, idx) => `
               <div class="checkbox-item">
-                <input type="checkbox" value="${val}" class="filter-checkbox">
-                <span class="checkbox-text">${val}</span>
+                <input type="checkbox" value="${val}" class="filter-checkbox" id="${id}-${idx}">
+                <label for="${id}-${idx}" class="checkbox-text">${val}</label>
               </div>
             `).join('')}
             ${items.length > 8 ? '<div class="more-filters-hint">Прокрутите для просмотра всех</div>' : ''}
@@ -362,13 +413,13 @@ class TileCatalog {
 
   clearCategoryFilter() {
     this.categoryState.selectedCategories.clear();
-    this.categoryState.showLimit = 10;
+    this.categoryState.showLimit = 15;
     this.applyFilters();
     this.refreshCategoryFilter();
   }
   
   showMoreCategories() {
-    this.categoryState.showLimit += 10;
+    this.categoryState.showLimit += 15;
     this.refreshCategoryFilter();
   }
   
@@ -446,7 +497,7 @@ class TileCatalog {
         if (this.filters[k] instanceof Set) this.filters[k].clear();
       });
       this.categoryState.selectedCategories.clear();
-      this.categoryState.showLimit = 10;
+      this.categoryState.showLimit = 15;
       const checkboxes = document.querySelectorAll('.filter-checkbox, .category-checkbox');
       if (checkboxes) checkboxes.forEach(cb => cb.checked = false);
       if (searchInput) searchInput.value = '';
