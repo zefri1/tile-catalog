@@ -10,7 +10,20 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300..900;1,14..32,300..900&family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700;1,800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/src/styles.css">
   <link rel="stylesheet" href="/src/patches.css">
-  <script>window.SHEET_CSV_URL='https://docs.google.com/spreadsheets/d/e/2PACX-1vRfhgka5nFoR1TXYDGQ5CziYYqGSDXjhw_yJeO-MqFTb-k_RWlkjvaWxy9vBzLuKmo4KdCnz2SAdvMh/pub?gid=0&single=true&output=csv';</script>
+  <script>
+    // Конфигурация для загрузки данных
+    // Первично: API эндпоинт
+    window.SHEET_JSON_URL = '/api/items';
+    
+    // Fallback: прямой CSV из Google Sheets
+    window.SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRfhgka5nFoR1TXYDGQ5CziYYqGSDXjhw_yJeO-MqFTb-k_RWlkjvaWxy9vBzLuKmo4KdCnz2SAdvMh/pub?gid=0&single=true&output=csv';
+    
+    // Кэш-бастер для обновления без редеплоя
+    window.SHEET_CACHE_BUSTER = 'v=1';
+    
+    // Debug режим
+    window.DEBUG_MODE = false;
+  </script>
 </head>
 <body>
     <!-- Loading Screen -->
@@ -63,7 +76,7 @@
                     <div class="filters-panel">
                         <div class="filters-header">
                             <h2>Фильтры</h2>
-                            <button id="clear-filters" class="clear-btn">Очистить</button>
+                            <button class="clear-btn">Очистить</button>
                         </div>
                         <div class="filters-content">
                             <!-- Search Filter -->
@@ -114,8 +127,10 @@
                         </label>
                     </div>
 
-                    <!-- Inline results count before grid -->
+                    <!-- Mobile collapsible filters -->
                     <div id="filters-collapsible" class="filters-collapsible"></div>
+                    
+                    <!-- Controls -->
                     <div class="controls-box">
                         <div class="sort-control">
                             <label class="sort-label" for="sort-select">Сортировка:</label>
@@ -139,8 +154,8 @@
                                 </button>
                             </div>
                         </div>
-                        <div class="controls-right">
-                            <span id="results-count" class="results-info">Найдено товаров: 0</span>
+                        <div class="results-info">
+                            <span id="results-count">Найдено товаров: 0</span>
                         </div>
                     </div>
                     
