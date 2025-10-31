@@ -1,7 +1,7 @@
 import { defineConfig } from 'vite'
 
 export default defineConfig({
-  base: './',
+  base: '/',
   server: { port: 5173, open: false, cors: true, strictPort: false },
   build: {
     outDir: 'dist',
