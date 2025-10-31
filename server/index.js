@@ -11,7 +11,7 @@ app.use(cors());
 // Middleware
 app.use(express.json());
 
-// Утилита парсинга CSV в JSON с поддержкой формата поставщика
+// Утилита парсинга CSV в JSON с поддержкой формата поставщика + чекбоксы
 function parseCSV(csvText) {
   const lines = csvText.split(/\r?\n/).filter(line => line.trim());
   if (lines.length < 2) return [];
@@ -19,22 +19,36 @@ function parseCSV(csvText) {
   const headers = lines[0].split(/[;,]/).map(h => h.trim().toLowerCase());
   const items = [];
   
-  // Маппинг колонок поставщика -> формат каталога
+  // Маппинг колонок поставщика -> формат каталога + поддержка чекбоксов
   const columnMap = {
-    // Поставщик -> Каталог
-    'id': 'id',
-    'brand': 'brand', 
-    'fullname': 'name',
-    'collection': 'collection',
-    'color': 'color',
-    'price.roznichnaya': 'price',
-    'image': 'image',
-    'rest.moskow': 'stock',
-    'byorder': 'byorder',
-    'itemcategory': 'category'
+    // Чекбокс для управления видимостью на сайте
+    'на_сайт': headers.findIndex(h => h.includes('на_сайт') || h.includes('☑️') || h === 'checkbox'),
+    'сайт': headers.findIndex(h => h.includes('сайт')),
+    'показывать': headers.findIndex(h => h.includes('показывать')),
+    
+    // Основные поля поставщика -> Каталог
+    'id': headers.findIndex(h => h === 'id'),
+    'brand': headers.findIndex(h => h === 'brand'), 
+    'fullname': headers.findIndex(h => h === 'fullname'),
+    'collection': headers.findIndex(h => h === 'collection'),
+    'country': headers.findIndex(h => h === 'country'),
+    'color': headers.findIndex(h => h === 'color'),
+    'size': headers.findIndex(h => h === 'size'),
+    'price.roznichnaya': headers.findIndex(h => h === 'price.roznichnaya'),
+    'image': headers.findIndex(h => h === 'image'),
+    'rest.moskow': headers.findIndex(h => h === 'rest.moskow'),
+    'byorder': headers.findIndex(h => h === 'byorder'),
+    'itemcategory': headers.findIndex(h => h === 'itemcategory'),
+    'hidden': headers.findIndex(h => h === 'hidden')
   };
   
-  console.log('📋 CSV Headers:', headers.slice(0, 10));
+  // Найдем индекс колонки с чекбоксами
+  const checkboxColumnIndex = columnMap['на_сайт'] !== -1 ? columnMap['на_сайт'] : 
+                              columnMap['сайт'] !== -1 ? columnMap['сайт'] :
+                              columnMap['показывать'] !== -1 ? columnMap['показывать'] : 0; // Первая колонка по умолчанию
+  
+  console.log('📊 CSV Headers:', headers.slice(0, 10));
+  console.log('☑️ Checkbox column index:', checkboxColumnIndex, 'Header:', headers[checkboxColumnIndex]);
   
   for (let i = 1; i < lines.length; i++) {
     const values = lines[i].split(/[;,]/);
@@ -46,12 +60,31 @@ function parseCSV(csvText) {
     });
     
     try {
+      // Проверяем чекбокс - показывать ли товар на сайте
+      const showOnSite = values[checkboxColumnIndex];
+      const isVisibleOnSite = showOnSite === 'TRUE' || showOnSite === 'true' || showOnSite === '1';
+      
+      // Если товар не отмечен чекбоксом - пропускаем
+      if (!isVisibleOnSite) {
+        continue;
+      }
+      
       // Извлекаем данные с учетом разных форматов
       const id = row['id'] || `item-${i}`;
       const brand = row['brand'] || 'Без бренда';
       const fullName = row['fullname'] || '';
       const collection = row['collection'] || '';
+      const country = row['country'] || '';
       const color = row['color'] || 'Не указан';
+      
+      // Обработка размера (30x30x0,8 -> 30×30)
+      let size = row['size'] || '';
+      if (size) {
+        const sizeMatch = size.match(/(\d+)[x×](\d+)/);
+        if (sizeMatch) {
+          size = `${sizeMatch[1]}×${sizeMatch[2]}`;
+        }
+      }
       
       // Парсим цену
       let price = 0;
@@ -131,14 +164,16 @@ function parseCSV(csvText) {
         image: imageUrl,
         inStock: hasStock,
         onDemand: !hasStock && (byOrder || price > 0),
-        hidden: false,
+        hidden: false, // Если товар отмечен чекбоксом, он не скрыт
         phone: '',
         category: row['itemcategory'] || row['category'] || 'Плитка',
         stock: stockRaw,
-        collection: collection
+        collection: collection,
+        country: country,
+        size: size
       };
       
-      // Фильтр: только товары которые доступны
+      // Добавляем только если товар доступен
       if (item.inStock || item.onDemand) {
         items.push(item);
       }
@@ -152,7 +187,7 @@ function parseCSV(csvText) {
   return items;
 }
 
-// API эндпоинт: проксирование Google Sheets CSV -> JSON
+// API эндпоинт: проксирование Google Sheets CSV -> JSON с поддержкой чекбоксов
 app.get('/api/items', async (req, res) => {
   try {
     const csvUrl = process.env.SHEET_CSV_URL;
@@ -184,7 +219,7 @@ app.get('/api/items', async (req, res) => {
     
     const items = parseCSV(csvText);
     
-    console.log(`[${new Date().toISOString()}] Processed ${items.length} items`);
+    console.log(`[${new Date().toISOString()}] Processed ${items.length} items (only checked items shown)`);
     
     if (items.length > 0) {
       console.log('Sample items:', items.slice(0, 2).map(i => `${i.name} - ${i.price}₽`));
@@ -199,6 +234,7 @@ app.get('/api/items', async (req, res) => {
       count: items.length,
       updated_at: new Date().toISOString(),
       source_url: csvUrl.substring(0, 60) + '...',
+      note: 'Only items marked with checkbox are shown',
       items: items
     });
     
@@ -224,11 +260,13 @@ app.get('/healthz', (req, res) => {
 app.get('/', (req, res) => {
   res.json({
     service: 'Tile Catalog API',
-    version: '1.1.0',
+    version: '1.2.0',
+    features: ['checkbox-control', 'supplier-format', 'auto-mapping'],
     endpoints: {
-      '/api/items': 'GET - получить список товаров из Google Sheets (поддержка формата поставщика)',
+      '/api/items': 'GET - получить список товаров из Google Sheets (только отмеченные чекбоксом)',
       '/healthz': 'GET - проверка работоспособности'
     },
+    note: 'Items are filtered by checkbox in first column of CSV',
     timestamp: new Date().toISOString()
   });
 });
@@ -244,12 +282,13 @@ app.use('*', (req, res) => {
 
 // Запуск сервера
 app.listen(PORT, () => {
-  console.log(`🚀 Tile Catalog API v1.1.0 running on port ${PORT}`);
+  console.log(`🚀 Tile Catalog API v1.2.0 running on port ${PORT}`);
   console.log(`📊 Health check: http://localhost:${PORT}/healthz`);
   console.log(`📋 Items API: http://localhost:${PORT}/api/items`);
+  console.log(`☑️ Feature: Checkbox control for site visibility`);
   
   if (!process.env.SHEET_CSV_URL) {
-    console.warn('⚠️  SHEET_CSV_URL not set - API will return error');
+    console.warn('⚠️ SHEET_CSV_URL not set - API will return error');
   } else {
     console.log(`📄 CSV source: ${process.env.SHEET_CSV_URL.substring(0, 60)}...`);
   }
