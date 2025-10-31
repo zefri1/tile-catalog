@@ -1,5 +1,5 @@
 /**
- * Marketplace-style Category Navigation System (no sidebar breadcrumbs)
+ * Marketplace-style Category Navigation System (no breadcrumbs) — renamed root class
  */
 
 class MarketplaceCategoryNavigator {
@@ -54,7 +54,7 @@ class MarketplaceCategoryNavigator {
 
   renderCategoryNavigation(){
     const sidebar=document.getElementById('filters-sidebar'); if(!sidebar) return;
-    const el=document.createElement('div'); el.className='category-navigation';
+    const el=document.createElement('div'); el.className='categories-panel';
     el.innerHTML = this.generateCategoryListHTML();
     const panel=sidebar.querySelector('.filters-panel'); if(panel){ panel.insertBefore(el,panel.firstChild); }
     this.bindCategoryEvents();
@@ -88,7 +88,7 @@ class MarketplaceCategoryNavigator {
       html += '<div class="category-children">';
       const seen=new Set();
       data.children.forEach(child=>{
-        if(seen.has(child.name)) return; // убираем самовложенные дубли
+        if(seen.has(child.name)) return; // убрать самодубли
         seen.add(child.name);
         html += `<div class="category-child" data-category="${child.name}">
           <span class="category-name">${child.name}</span>
@@ -101,7 +101,7 @@ class MarketplaceCategoryNavigator {
   }
 
   bindCategoryEvents(){
-    const root=document.querySelector('.category-navigation'); if(!root) return;
+    const root=document.querySelector('.categories-panel'); if(!root) return;
     root.addEventListener('click',(e)=>{
       const item=e.target.closest('.category-item, .category-child');
       if(!item) return; this.handleCategoryClick(item);
