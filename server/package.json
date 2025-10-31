@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "start": "node index.js",
-    "dev": "node --watch index.js"
+    "dev": "node --watch index.js",
+    "render-build": "npm install"
   },
   "dependencies": {
     "express": "^4.19.2",
