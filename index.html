@@ -12,17 +12,17 @@
   <link rel="stylesheet" href="/src/patches.css">
   <script>
     // Конфигурация для загрузки данных
-    // Первично: API эндпоинт
-    window.SHEET_JSON_URL = '/api/items';
+    // Первично: API эндпоинт (реальный URL с Render)
+    window.SHEET_JSON_URL = 'https://kmtbot-d0pm.onrender.com/api/items';
     
-    // Fallback: прямой CSV из Google Sheets
+    // Fallback: прямой CSV из Google Sheets (существующие тестовые данные)
     window.SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRfhgka5nFoR1TXYDGQ5CziYYqGSDXjhw_yJeO-MqFTb-k_RWlkjvaWxy9vBzLuKmo4KdCnz2SAdvMh/pub?gid=0&single=true&output=csv';
     
     // Кэш-бастер для обновления без редеплоя
-    window.SHEET_CACHE_BUSTER = 'v=1';
+    window.SHEET_CACHE_BUSTER = 'v=2';
     
     // Debug режим
-    window.DEBUG_MODE = false;
+    window.DEBUG_MODE = true;
   </script>
 </head>
 <body>
