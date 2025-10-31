@@ -8,245 +8,96 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300..900;1,14..32,300..900&family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700;1,800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/src/styles.css">
-  <link rel="stylesheet" href="/src/patches.css">
+  <link rel="stylesheet" href="/src/styles.css?v=5">
+  <link rel="stylesheet" href="/src/patches.css?v=5">
   <script>
-    // Конфигурация для загрузки данных
-    // Первично: API эндпоинт (реальный URL с Render)
     window.SHEET_JSON_URL = 'https://kmtbot-d0pm.onrender.com/api/items';
-    
-    // Fallback: прямой CSV из Google Sheets (существующие тестовые данные)
     window.SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRfhgka5nFoR1TXYDGQ5CziYYqGSDXjhw_yJeO-MqFTb-k_RWlkjvaWxy9vBzLuKmo4KdCnz2SAdvMh/pub?gid=0&single=true&output=csv';
-    
-    // Кэш-бастер для обновления без редеплоя
-    window.SHEET_CACHE_BUSTER = 'v=3';
-    
-    // Debug режим
+    window.SHEET_CACHE_BUSTER = 'v=5';
     window.DEBUG_MODE = true;
   </script>
 </head>
 <body>
-    <!-- Loading Screen -->
-    <div id="loading-screen" class="loading-screen">
-        <div class="loading-content">
-            <div class="loading-logo">🏠</div>
-            <div class="loading-text">Загружаем каталог...</div>
-            <div class="loading-spinner"></div>
-        </div>
+  <div id="loading-screen" class="loading-screen">
+    <div class="loading-content">
+      <div class="loading-logo">🏠</div>
+      <div class="loading-text">Загружаем каталог...</div>
+      <div class="loading-spinner"></div>
     </div>
+  </div>
 
-    <!-- Header -->
-    <header class="header">
-        <div class="container">
-            <div class="header-content">
-                <div class="brand">
-                    <div class="logo">
-                        <div class="logo-circle">
-                            <img src="cat.png" alt="Плиточник" loading="lazy">
-                        </div>
-                    </div>
-                    <div class="brand-info">
-                        <h1>Плиточник</h1>
-                        <p class="brand-tagline">Каталог керамической плитки</p>
-                    </div>
-                </div>
-                <div class="header-actions">
-                    <a href="tel:+74951234567" class="action-btn" title="Позвонить">
-                        <span class="icon">📞</span>
-                    </a>
-                    <a href="https://vk.com/plitochik44" target="_blank" class="action-btn" title="VK" aria-label="VK">
-                        <svg class="icon-vk" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                            <path d="M12.91 17c-4.55 0-7.16-3.1-7.27-8.27h2.3c.07 3.55 1.63 5.05 2.86 5.36V8.73h2.16v3.08c1.21-.13 2.49-1.52 2.92-3.08h2.18c-.33 1.87-1.72 3.26-2.71 3.88.99.48 2.59 1.71 3.19 3.39h-2.46c-.47-1.14-1.59-2.08-3.12-2.22v2.22h-2.16V14.8c-1.6-.4-3.16-1.78-3.78-4.01.84 3.02 2.94 4.21 4.78 4.21.21 0 .41-.01.6-.03V17h-.49z"/>
-                        </svg>
-                    </a>
-                    <button id="theme-toggle" class="action-btn" title="Сменить тему">
-                        <span class="theme-icon">🌙</span>
-                    </button>
-                </div>
-            </div>
-        </div>
-    </header>
-
-    <!-- Main Content -->
-    <main class="main">
-        <div class="container">
-            <div class="catalog-layout">
-                <!-- Filters Sidebar -->
-                <aside id="filters-sidebar" class="filters-sidebar">
-                    <div class="filters-panel">
-                        <div class="filters-header">
-                            <h2>Фильтры</h2>
-                            <button class="clear-btn">Очистить</button>
-                        </div>
-                        <div class="filters-content">
-                            <!-- Search Filter -->
-                            <div class="filter-group">
-                                <label class="filter-label" for="search-input">ПОИСК</label>
-                                <input type="text" id="search-input" class="search-input" placeholder="Название, бренд, описание...">
-                            </div>
-                            
-                            <!-- Brand Filter -->
-                            <div class="filter-group">
-                                <label class="filter-label">БРЕНДЫ</label>
-                                <div id="brand-filters" class="checkbox-group"></div>
-                            </div>
-                            
-                            <!-- Collection Filter -->
-                            <div class="filter-group">
-                                <label class="filter-label">КОЛЛЕКЦИИ</label>
-                                <div id="collection-filters" class="checkbox-group"></div>
-                            </div>
-                            
-                            <!-- Country Filter -->
-                            <div class="filter-group">
-                                <label class="filter-label">СТРАНА</label>
-                                <div id="country-filters" class="checkbox-group"></div>
-                            </div>
-                            
-                            <!-- Size Filter -->
-                            <div class="filter-group">
-                                <label class="filter-label">РАЗМЕРЫ</label>
-                                <div id="size-filters" class="checkbox-group"></div>
-                            </div>
-                            
-                            <!-- Color Filter -->
-                            <div class="filter-group">
-                                <label class="filter-label">ЦВЕТА</label>
-                                <div id="color-filters" class="checkbox-group"></div>
-                            </div>
-                            
-                            <!-- Price Filter -->
-                            <div class="filter-group">
-                                <label class="filter-label">ЦЕНА, РУБ</label>
-                                <div class="price-filter">
-                                    <div class="price-inputs">
-                                        <input type="number" id="price-min" class="price-input" value="0" min="0" placeholder="Мин">
-                                        <span class="price-separator">—</span>
-                                        <input type="number" id="price-max" class="price-input" value="5000" min="0" placeholder="Макс">
-                                    </div>
-                                    <input type="range" id="price-range" class="price-slider" min="0" max="5000" value="5000">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </aside>
-
-                <!-- Products Area -->
-                <section class="products-area">
-                    <!-- Products Toolbar -->
-                    <div class="products-toolbar">
-                        <input type="checkbox" id="filters-toggle" class="filters-toggle visually-hidden" aria-controls="filters-collapsible">
-                        <label for="filters-toggle" class="filters-toggle-chip" role="button">
-                            Фильтры
-                            <svg class="filters-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                <polyline points="7 8 12 3 17 8"/>
-                                <polyline points="7 16 12 21 17 16"/>
-                            </svg>
-                        </label>
-                    </div>
-
-                    <!-- Mobile collapsible filters -->
-                    <div id="filters-collapsible" class="filters-collapsible"></div>
-                    
-                    <!-- Controls -->
-                    <div class="controls-box">
-                        <div class="sort-control">
-                            <label class="sort-label" for="sort-select">Сортировка:</label>
-                            <select id="sort-select" class="sort-select">
-                                <option value="price-asc">По цене ↑</option>
-                                <option value="price-desc">По цене ↓</option>
-                                <option value="name-asc">По названию А-Я</option>
-                                <option value="name-desc">По названию Я-А</option>
-                            </select>
-                        </div>
-                        <div class="view-controls" role="group" aria-label="Вид">
-                            <label class="view-label">Вид:</label>
-                            <div class="view-buttons">
-                                <button id="view-grid-1" class="view-btn" data-columns="1" title="Крупные карточки" aria-label="Крупные карточки" aria-pressed="false">
-                                    <span class="view-digit view-digit--mobile">1</span>
-                                    <span class="view-digit view-digit--desktop">4</span>
-                                </button>
-                                <button id="view-grid-2" class="view-btn active" data-columns="2" title="Компактная сетка" aria-label="Компактная сетка" aria-pressed="true">
-                                    <span class="view-digit view-digit--mobile">2</span>
-                                    <span class="view-digit view-digit--desktop">5</span>
-                                </button>
-                            </div>
-                        </div>
-                        <div class="results-info">
-                            <span id="results-count">Найдено товаров: 0</span>
-                        </div>
-                    </div>
-                    
-
-                    <!-- Products Grid -->
-                    <div id="products-grid" class="products-grid grid-2">
-                        <!-- Products will be loaded here -->
-                    </div>
-
-                    <!-- No Results -->
-                    <div id="no-results" class="no-results hidden">
-                        <div class="no-results-content">
-                            <div class="no-results-icon">🔍</div>
-                            <h3>Товары не найдены</h3>
-                            <p>Попробуйте изменить параметры поиска</p>
-                        </div>
-                    </div>
-                </section>
-            </div>
-        </div>
-    </main>
-
-    <!-- Footer -->
-    <footer class="footer">
-        <div class="container">
-            <div class="footer-content">
-                <div class="footer-info">
-                    <p>&copy; 2025 Плиточник. Все права защищены.</p>
-                    <p>Телефон: <a href="tel:+74951234567">+7 (495) 123-45-67</a></p>
-                </div>
-                <div class="footer-links">
-                    <a href="https://vk.com/plitochik44" target="_blank">VK</a>
-                </div>
-            </div>
-        </div>
-    </footer>
-
-    <!-- Product Modal -->
-    <div id="product-modal" class="modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-      <div class="modal__backdrop"></div>
-      <div class="modal__dialog" role="document">
-        <button class="modal__close" type="button" aria-label="Закрыть">✕</button>
-        <div class="modal__content">
-          <div class="modal__media">
-            <div class="modal__image-wrap">
-              <img id="modal-image" alt="">
-              <div id="modal-image-ph" class="modal__placeholder">🏠</div>
+  <header class="header">
+    <div class="container">
+      <div class="header-content">
+        <div class="brand">
+          <div class="logo">
+            <div class="logo-circle">
+              <img src="cat.png" alt="Плиточник" loading="lazy">
             </div>
           </div>
-          <div class="modal__details">
-            <h2 id="modal-title" class="modal__title"></h2>
-            <div class="modal__price-row">
-              <div id="modal-price" class="modal__price"></div>
-              <div id="modal-badges" class="modal__badges"></div>
-            </div>
-            <div class="modal__meta">
-              <div class="meta-item"><span>Бренд:</span> <strong id="modal-brand"></strong></div>
-              <div class="meta-item"><span>Цвет:</span> <strong id="modal-color"></strong></div>
-              <div class="meta-item"><span>Статус:</span> <strong id="modal-status"></strong></div>
-            </div>
-            <p id="modal-desc" class="modal__desc"></p>
-            <div class="modal__actions">
-              <a id="modal-vk-btn" href="https://vk.com/plitochik44" target="_blank" class="btn btn-secondary">💬 VK</a>
-              <a id="modal-phone-btn" href="tel:+74951234567" class="btn btn-primary">📞 +7 (495) 123-45-67</a>
-              <button type="button" class="btn" id="modal-close-btn">Закрыть</button>
-            </div>
+          <div class="brand-info">
+            <h1>Плиточник</h1>
+            <p class="brand-tagline">Каталог керамической плитки</p>
           </div>
+        </div>
+        <div class="header-actions">
+          <a href="tel:+74951234567" class="action-btn" title="Позвонить"><span class="icon">📞</span></a>
+          <a href="https://vk.com/plitochik44" target="_blank" class="action-btn" title="VK" aria-label="VK">
+            <svg class="icon-vk" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.91 17c-4.55 0-7.16-3.1-7.27-8.27h2.3c.07 3.55 1.63 5.05 2.86 5.36V8.73h2.16v3.08c1.21-.13 2.49-1.52 2.92-3.08h2.18c-.33 1.87-1.72 3.26-2.71 3.88.99.48 2.59 1.71 3.19 3.39h-2.46c-.47-1.14-1.59-2.08-3.12-2.22v2.22h-2.16V14.8c-1.6-.4-3.16-1.78-3.78-4.01.84 3.02 2.94 4.21 4.78 4.21.21 0 .41-.01.6-.03V17h-.49z"/></svg>
+          </a>
+          <button id="theme-toggle" class="action-btn" title="Сменить тему"><span class="theme-icon">🌙</span></button>
         </div>
       </div>
     </div>
+  </header>
 
-    <!-- Scripts: src paths for Vite processing -->
-    <script type="module" src="/src/catalog.js"></script>
-    <script type="module" src="/src/main.js"></script>
+  <main class="main">
+    <div class="container">
+      <div class="catalog-layout">
+        <aside id="filters-sidebar" class="filters-sidebar"></aside>
+        <section class="products-area">
+          <div class="products-toolbar"></div>
+          <div id="filters-collapsible" class="filters-collapsible"></div>
+          <div class="controls-box">
+            <div class="sort-control">
+              <label class="sort-label" for="sort-select">Сортировка:</label>
+              <select id="sort-select" class="sort-select">
+                <option value="price-asc">По цене ↑</option>
+                <option value="price-desc">По цене ↓</option>
+                <option value="name-asc">По названию А-Я</option>
+                <option value="name-desc">По названию Я-А</option>
+              </select>
+            </div>
+            <div class="view-controls" role="group" aria-label="Вид">
+              <label class="view-label">Вид:</label>
+              <div class="view-buttons">
+                <button id="view-grid-1" class="view-btn" data-columns="1" aria-pressed="false"><span class="view-digit view-digit--mobile">1</span><span class="view-digit view-digit--desktop">4</span></button>
+                <button id="view-grid-2" class="view-btn active" data-columns="2" aria-pressed="true"><span class="view-digit view-digit--mobile">2</span><span class="view-digit view-digit--desktop">5</span></button>
+              </div>
+            </div>
+            <div class="results-info"><span id="results-count">Найдено товаров: 0</span></div>
+          </div>
+          <div id="products-grid" class="products-grid grid-2"></div>
+          <div id="no-results" class="no-results hidden"><div class="no-results-content"><div class="no-results-icon">🔍</div><h3>Товары не найдены</h3><p>Попробуйте изменить параметры поиска</p></div></div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer"><div class="container"><div class="footer-content"><div class="footer-info"><p>&copy; 2025 Плиточник. Все права защищены.</p><p>Телефон: <a href="tel:+74951234567">+7 (495) 123-45-67</a></p></div><div class="footer-links"><a href="https://vk.com/plitochik44" target="_blank">VK</a></div></div></div></footer>
+
+  <div id="product-modal" class="modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal__backdrop"></div>
+    <div class="modal__dialog" role="document">
+      <button class="modal__close" type="button" aria-label="Закрыть">✕</button>
+      <div class="modal__content">
+        <div class="modal__media"><div class="modal__image-wrap"><img id="modal-image" alt=""><div id="modal-image-ph" class="modal__placeholder">🏠</div></div></div>
+        <div class="modal__details"><h2 id="modal-title" class="modal__title"></h2><div class="modal__price-row"><div id="modal-price" class="modal__price"></div><div id="modal-badges" class="modal__badges"></div></div><div class="modal__meta"><div class="meta-item"><span>Бренд:</span> <strong id="modal-brand"></strong></div><div class="meta-item"><span>Цвет:</span> <strong id="modal-color"></strong></div><div class="meta-item"><span>Статус:</span> <strong id="modal-status"></strong></div></div><p id="modal-desc" class="modal__desc"></p><div class="modal__actions"><a id="modal-vk-btn" href="https://vk.com/plitochik44" target="_blank" class="btn btn-secondary">💬 VK</a><a id="modal-phone-btn" href="tel:+74951234567" class="btn btn-primary">📞 +7 (495) 123-45-67</a><button type="button" class="btn" id="modal-close-btn">Закрыть</button></div></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/src/catalog.js?v=5"></script>
+  <script type="module" src="/src/main.js?v=5"></script>
 </body>
 </html>
