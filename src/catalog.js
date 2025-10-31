@@ -24,7 +24,7 @@ function parseCSV(text) {
 function s(v){ return v?String(v).trim():'' }
 function n(v){ const x=parseFloat(String(v).replace(/[^0-9.,]/g,'').replace(',','.')); return isNaN(x)?0:Math.round(x) }
 function b(v){ if(typeof v==='boolean') return v; const l=String(v||'').toLowerCase().trim(); return l==='true'||l==='1'||l==='да'||l==='yes' }
-function cs(v){ if(!v) return ''; return String(v).replace(/[\'">]/g,'').replace(/\s+/g,' ').trim() }
+function cs(v){ if(!v) return ''; return String(v).replace(/[\'>"]/g,'').replace(/\s+/g,' ').trim() }
 
 function parseCSVData(csvContent){
   const rows = parseCSV(csvContent);
@@ -72,6 +72,25 @@ class TileCatalog {
     this.isInitialized=false; this.batchSize=40; this.renderIndex=0;
   }
 
+  showLoadingScreen(){
+    const screen = document.getElementById('loading-screen');
+    if(screen) screen.style.display = 'flex';
+  }
+
+  hideLoadingScreen(){
+    const screen = document.getElementById('loading-screen');
+    if(screen) screen.style.display = 'none';
+  }
+
+  showErrorOverlay(message){
+    console.error('Error:', message);
+    // Simple error display
+    const errorDiv = document.createElement('div');
+    errorDiv.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;padding:20px;border:2px solid #f44;border-radius:8px;z-index:9999;';
+    errorDiv.innerHTML = `<h3>Ошибка загрузки</h3><p>${message}</p><button onclick="this.parentElement.remove();location.reload()">Перезагрузить</button>`;
+    document.body.appendChild(errorDiv);
+  }
+
   async init(){
     this.showLoadingScreen();
     try{
@@ -111,7 +130,150 @@ class TileCatalog {
     this.products = parsed.filter(p => p.price>0 && !p.hidden);
   }
 
-  // ... omitted unchanged methods ...
+  initializeFilters(){
+    // Extract unique brands and colors
+    const brands = [...new Set(this.products.map(p => p.brand))].sort();
+    const colors = [...new Set(this.products.map(p => p.color))].sort();
+    
+    // Create filters UI
+    this.createFiltersUI(brands, colors);
+    
+    // Set price range
+    const prices = this.products.map(p => p.price).filter(p => p > 0);
+    this.filters.priceMin = Math.min(...prices);
+    this.filters.priceMax = Math.max(...prices);
+  }
+
+  createFiltersUI(brands, colors){
+    const sidebar = document.getElementById('filters-sidebar');
+    if(!sidebar) return;
+    
+    sidebar.innerHTML = `
+      <div class="filters-header">
+        <h2>Фильтры</h2>
+        <button id="clear-filters" class="btn-clear">Сбросить</button>
+      </div>
+      <div class="filter-group">
+        <label class="filter-label">Поиск:</label>
+        <input type="text" id="search-input" class="filter-input" placeholder="Введите название...">
+      </div>
+      <div class="filter-group">
+        <label class="filter-label">Бренды:</label>
+        <div class="filter-checkboxes" id="brand-filters">
+          ${brands.map(b => `<label><input type="checkbox" value="${b}">${b}</label>`).join('')}
+        </div>
+      </div>
+      <div class="filter-group">
+        <label class="filter-label">Цвета:</label>
+        <div class="filter-checkboxes" id="color-filters">
+          ${colors.map(c => `<label><input type="checkbox" value="${c}">${c}</label>`).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  bindEvents(){
+    // Search
+    const searchInput = document.getElementById('search-input');
+    if(searchInput) searchInput.addEventListener('input', (e) => {
+      this.filters.search = e.target.value.toLowerCase();
+      this.applyFilters();
+    });
+
+    // Brand filters
+    document.querySelectorAll('#brand-filters input').forEach(cb => {
+      cb.addEventListener('change', (e) => {
+        if(e.target.checked) this.filters.brands.add(e.target.value);
+        else this.filters.brands.delete(e.target.value);
+        this.applyFilters();
+      });
+    });
+
+    // Color filters
+    document.querySelectorAll('#color-filters input').forEach(cb => {
+      cb.addEventListener('change', (e) => {
+        if(e.target.checked) this.filters.colors.add(e.target.value);
+        else this.filters.colors.delete(e.target.value);
+        this.applyFilters();
+      });
+    });
+
+    // Clear filters
+    const clearBtn = document.getElementById('clear-filters');
+    if(clearBtn) clearBtn.addEventListener('click', () => {
+      this.filters.search = '';
+      this.filters.brands.clear();
+      this.filters.colors.clear();
+      document.querySelectorAll('.filter-checkboxes input').forEach(cb => cb.checked = false);
+      if(searchInput) searchInput.value = '';
+      this.applyFilters();
+    });
+
+    // Sort
+    const sortSelect = document.getElementById('sort-select');
+    if(sortSelect) sortSelect.addEventListener('change', (e) => {
+      this.currentSort = e.target.value;
+      this.applyFilters();
+    });
+
+    // View buttons
+    document.querySelectorAll('.view-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+        e.target.classList.add('active');
+        this.currentView = parseInt(e.target.dataset.columns);
+        const grid = document.getElementById('products-grid');
+        if(grid) {
+          grid.className = `products-grid grid-${this.currentView}`;
+        }
+      });
+    });
+  }
+
+  applyFilters(){
+    let filtered = [...this.products];
+    
+    // Search filter
+    if(this.filters.search) {
+      const search = this.filters.search;
+      filtered = filtered.filter(p => 
+        p.name.toLowerCase().includes(search) ||
+        p.brand.toLowerCase().includes(search) ||
+        p.color.toLowerCase().includes(search)
+      );
+    }
+    
+    // Brand filter
+    if(this.filters.brands.size > 0) {
+      filtered = filtered.filter(p => this.filters.brands.has(p.brand));
+    }
+    
+    // Color filter
+    if(this.filters.colors.size > 0) {
+      filtered = filtered.filter(p => this.filters.colors.has(p.color));
+    }
+    
+    // Sort
+    this.sortProducts(filtered);
+    
+    this.filteredProducts = filtered;
+    this.updateResultsCount();
+    this.renderProducts();
+  }
+
+  sortProducts(products){
+    switch(this.currentSort) {
+      case 'price-asc': products.sort((a,b) => a.price - b.price); break;
+      case 'price-desc': products.sort((a,b) => b.price - a.price); break;
+      case 'name-asc': products.sort((a,b) => a.name.localeCompare(b.name)); break;
+      case 'name-desc': products.sort((a,b) => b.name.localeCompare(a.name)); break;
+    }
+  }
+
+  updateResultsCount(){
+    const counter = document.getElementById('results-count');
+    if(counter) counter.textContent = `Найдено товаров: ${this.filteredProducts.length}`;
+  }
 
   renderProducts(){
     const grid=document.getElementById('products-grid'); const nr=document.getElementById('no-results'); 
@@ -166,6 +328,59 @@ class TileCatalog {
   attachCardClicks(){
     const grid=document.getElementById('products-grid');
     grid.querySelectorAll('.product-card').forEach(card=>{ card.addEventListener('click',()=>{ const id=card.dataset.productId; const p=this.filteredProducts.find(x=>x.id===id); if(p) this.openModal(p); }); });
+  }
+
+  openModal(product){
+    const modal = document.getElementById('product-modal');
+    if(!modal) return;
+    
+    // Fill modal content
+    document.getElementById('modal-title').textContent = product.name;
+    document.getElementById('modal-brand').textContent = product.brand;
+    document.getElementById('modal-color').textContent = product.color;
+    document.getElementById('modal-price').textContent = `${product.price} ₽`;
+    document.getElementById('modal-desc').textContent = product.description || 'Описание отсутствует';
+    document.getElementById('modal-status').textContent = product.inStock ? 'В наличии' : 'Под заказ';
+    
+    const img = document.getElementById('modal-image');
+    const ph = document.getElementById('modal-image-ph');
+    if(product.image) {
+      img.src = product.image;
+      img.style.display = 'block';
+      ph.style.display = 'none';
+    } else {
+      img.style.display = 'none';
+      ph.style.display = 'flex';
+    }
+    
+    // Show modal
+    modal.setAttribute('aria-hidden', 'false');
+    modal.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+    
+    // Focus management
+    const closeBtn = modal.querySelector('.modal__close');
+    if(closeBtn) closeBtn.focus();
+    
+    // Close handlers
+    const closeModal = () => {
+      modal.setAttribute('aria-hidden', 'true');
+      modal.style.display = 'none';
+      document.body.style.overflow = '';
+    };
+    
+    modal.querySelector('.modal__close').onclick = closeModal;
+    modal.querySelector('#modal-close-btn').onclick = closeModal;
+    modal.querySelector('.modal__backdrop').onclick = closeModal;
+    
+    // ESC key
+    const handleEsc = (e) => {
+      if(e.key === 'Escape') {
+        closeModal();
+        document.removeEventListener('keydown', handleEsc);
+      }
+    };
+    document.addEventListener('keydown', handleEsc);
   }
 }
 
