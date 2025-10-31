@@ -1,0 +1,19 @@
+{
+  "name": "tile-catalog-api",
+  "version": "1.0.0",
+  "description": "API service for tile catalog - proxy Google Sheets CSV to JSON",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "node-fetch": "^3.3.2",
+    "cors": "^2.8.5"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
