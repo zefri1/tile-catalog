@@ -1,0 +1,119 @@
+/**
+ * Исправление проблемы со скроллом фильтров
+ * Fix for filters scroll issue
+ */
+
+/* Исправляем скролл в боковой панели */
+.filters-sidebar {
+  position: sticky;
+  top: 120px;
+  max-height: calc(100vh - 140px); /* Оставляем место для шапки */
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
+}
+
+.filters-sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.filters-sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.filters-sidebar::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
+
+.filters-sidebar::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
+}
+
+/* Убираем ограничение высоты для групп чекбоксов */
+.checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  max-height: 150px; /* Увеличиваем высоту */
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklab, var(--color-primary) 35%, transparent) transparent;
+  padding-right: 4px; /* Место для скроллбара */
+}
+
+.checkbox-group::-webkit-scrollbar {
+  width: 6px;
+}
+
+.checkbox-group::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.checkbox-group::-webkit-scrollbar-thumb {
+  background: color-mix(in oklab, var(--color-primary) 35%, transparent);
+  border-radius: 6px;
+}
+
+.checkbox-group::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in oklab, var(--color-primary) 55%, transparent);
+}
+
+/* Особая обработка для мобильных устройств */
+@media (max-width: 768px) {
+  .filters-sidebar {
+    position: static;
+    max-height: none;
+    overflow: visible;
+  }
+  
+  .filters-collapsible {
+    max-height: none;
+    overflow: visible;
+  }
+  
+  .filters-collapsible.open {
+    display: block;
+    max-height: none;
+    overflow: visible;
+  }
+  
+  .filters-collapsible .filters-panel {
+    max-height: none;
+    overflow: visible;
+  }
+  
+  .checkbox-group {
+    max-height: 120px; /* Меньше на мобильных */
+  }
+}
+
+/* Особые стили для Firefox */
+@-moz-document url-prefix() {
+  .filters-sidebar,
+  .checkbox-group {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border) transparent;
+  }
+}
+
+/* Исправляем переполнение контента */
+.filters-panel {
+  background: var(--color-surface-elevated);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-sm);
+  overflow: visible; /* Исправляем overflow */
+}
+
+.filters-content {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  /* Убираем любые ограничения по высоте */
+  max-height: none;
+  overflow: visible;
+}
