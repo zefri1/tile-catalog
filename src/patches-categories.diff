@@ -1,0 +1,94 @@
+// ... same header and helpers as current file ...
+
+// replace createFiltersUI to drop flat category group and use only hierarchical
+
+function uniqueByName(arr){
+  const map=new Map();
+  (arr||[]).forEach(c=>{ if(!c||!c.name) return; const k=c.name.trim(); const prev=map.get(k); map.set(k,{name:k,count:(prev?prev.count:0)+(c.count||0)}); });
+  return Array.from(map.values());
+}
+
+// keep rest of code as in current src/catalog.js but patch methods below
+
+TileCatalog.prototype.createCategoryFilter = function(){
+  let categories = this.categoryTree.getCategories() || [];
+  // dedupe + drop empties
+  categories = uniqueByName(categories).filter(c=>c.count>0);
+  // selected first, then count desc, then name
+  const selected = new Set(this.categoryState.selectedCategories);
+  categories.sort((a,b)=>{
+    const sa=selected.has(a.name), sb=selected.has(b.name);
+    if(sa!==sb) return sa? -1: 1; // selected first
+    if(b.count!==a.count) return b.count-a.count;
+    return a.name.localeCompare(b.name,'ru');
+  });
+  const visible = categories.slice(0, this.categoryState.showLimit);
+  const hiddenCount = Math.max(0, categories.length - this.categoryState.showLimit);
+  return `
+    <div class="filter-group">
+      <div class="category-filter">
+        <div class="category-header">
+          <span class="category-title">КАТЕГОРИЯ</span>
+          <button class="category-clear" onclick="catalog.clearCategoryFilter()">Сбросить</button>
+        </div>
+        ${this.categoryState.selectedCategories.size>0?`
+          <div class="breadcrumb-nav">
+            <ul class="breadcrumbs">
+              <li class="breadcrumb-item"><button class="breadcrumb-link" onclick="catalog.clearCategoryFilter()">Все категории</button></li>
+              ${Array.from(this.categoryState.selectedCategories).map(cat=>`<li class="breadcrumb-item"><span class="breadcrumb-separator">›</span><span class="breadcrumb-current">${cat}</span></li>`).join('')}
+            </ul>
+          </div>`:''}
+        <div class="category-list">
+          ${visible.map(cat=>`
+            <div class="category-item">
+              <input type="checkbox" class="category-checkbox" value="${cat.name}" ${selected.has(cat.name)?'checked':''}>
+              <span class="category-name">${cat.name}</span>
+              <span class="category-count">${cat.count}</span>
+            </div>`).join('')}
+          ${hiddenCount>0?`<button class="show-more-btn" onclick="catalog.showMoreCategories()">Ещё ${hiddenCount} категорий</button>`:''}
+        </div>
+      </div>
+    </div>`;
+}
+
+TileCatalog.prototype.createFiltersUI = function(brands, colors, countries, surfaces, uses, structs){
+  const sidebar = document.getElementById('filters-sidebar');
+  if(!sidebar) return;
+  const createFilterGroup = (title, items, id) => {
+    if(!items || !Array.isArray(items) || items.length===0) return '';
+    return `
+      <div class="filter-group">
+        <label class="filter-label">${title}:</label>
+        <div class="checkbox-group scrollable" id="${id}">
+          ${items.map(val=>`<div class="checkbox-item"><input type="checkbox" value="${val}" class="filter-checkbox"><span class="checkbox-text">${val}</span></div>`).join('')}
+        </div>
+      </div>`;
+  };
+  sidebar.innerHTML = `
+    <div class="filters-panel">
+      <div class="filters-header"><h2>Фильтры</h2><button id="clear-filters" class="clear-btn">Сбросить</button></div>
+      <div class="filters-content">
+        <div class="filter-group"><label class="filter-label" for="search-input">ПОИСК:</label><input type="text" id="search-input" class="search-input" placeholder="Введите название..." autocomplete="off"></div>
+        ${this.createCategoryFilter()}
+        ${createFilterGroup('СТРАНА', countries, 'country-filters')}
+        ${createFilterGroup('ТИП ПОВЕРХНОСТИ', surfaces, 'surface-filters')}
+        ${createFilterGroup('ОБЛАСТЬ ПРИМЕНЕНИЯ', uses, 'use-filters')}
+        ${createFilterGroup('СТРУКТУРА ПОВЕРХНОСТИ', structs, 'struct-filters')}
+        ${createFilterGroup('БРЕНД', brands, 'brand-filters')}
+        ${createFilterGroup('ЦВЕТ', colors, 'color-filters')}
+      </div>
+    </div>`;
+}
+
+// Add diagnostics
+TileCatalog.prototype.buildCategoryTree = function(){
+  let withCats = 0;
+  (this.products||[]).forEach(p=>{
+    const list = Array.isArray(p.itemCategoryList)? p.itemCategoryList: [];
+    if(list.length>0) withCats++;
+    this.categoryTree.addProduct(p, list);
+  });
+  const cats = this.categoryTree.getCategories();
+  console.log('Category stats:', { productsWithCats: withCats, uniqueCats: cats.length });
+  console.log('Top categories:', cats.slice(0,20));
+}
