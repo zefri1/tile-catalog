@@ -24,7 +24,7 @@ function parseCSV(text) {
 function s(v){ return v?String(v).trim():'' }
 function n(v){ const x=parseFloat(v); return isNaN(x)?0:x }
 function b(v){ if(typeof v==='boolean') return v; if(typeof v==='string'){ const l=v.toLowerCase().trim(); return l==='true'||l==='1'||l==='да'||l==='yes' } return Boolean(v) }
-function cs(v){ if(!v) return ''; return String(v).replace(/[\'"<>]/g,'').replace(/\s+/g,' ').trim() }
+function cs(v){ if(!v) return ''; return String(v).replace(/[\'">]/g,'').replace(/\s+/g,' ').trim() }
 
 function parseCSVData(csvContent){
   const rows = parseCSV(csvContent);
@@ -60,6 +60,39 @@ function parseCSVData(csvContent){
   }));
 }
 
+// Parse JSON API response
+function parseJSONData(jsonData) {
+  try {
+    let items;
+    
+    // Handle different API response formats
+    if (jsonData.items && Array.isArray(jsonData.items)) {
+      items = jsonData.items;
+    } else if (Array.isArray(jsonData)) {
+      items = jsonData;
+    } else {
+      throw new Error('Invalid JSON format');
+    }
+    
+    return items.map(item => ({
+      id: item.id || 'product-' + Math.random().toString(36).slice(2, 11),
+      name: cs(s(item.name)) || 'Без названия',
+      brand: cs(s(item.brand)) || 'Неизвестно', 
+      color: cs(s(item.color)) || 'Не указан',
+      price: n(item.price) || 0,
+      description: cs(s(item.description)) || '',
+      image: s(item.image || item.image_url) || '',
+      phone: s(item.phone) || '',
+      inStock: b(item.inStock || item.instock),
+      onDemand: b(item.onDemand || item.ondemand), 
+      hidden: b(item.hidden)
+    }));
+  } catch (error) {
+    console.error('JSON parsing error:', error);
+    return [];
+  }
+}
+
 class TileCatalog {
   constructor(){
     this.products=[]; this.filteredProducts=[]; this.currentSort='price-asc'; this.currentView=2;
@@ -84,14 +117,71 @@ class TileCatalog {
   }
 
   async loadProducts(){
-    const FALLBACK_SHEET='https://docs.google.com/spreadsheets/d/e/2PACX-1vRfhgka5nFoR1TXYDGQ5CziYYqGSDXjhw_yJeO-MqFTb-k_RWlkjvaWxy9vBzLuKmo4KdCnz2SAdvMh/pub?gid=0&single=true&output=csv';
-    const sheetUrl = window.SHEET_CSV_URL || FALLBACK_SHEET;
-    const resp = await fetch(sheetUrl, { cache:'no-store' });
-    if(!resp.ok){ throw new Error(`Ошибка загрузки данных: ${resp.status}`); }
-    const text = await resp.text();
-    if(!text || text.length < 20){ throw new Error('Пустой ответ CSV'); }
-    this.products = parseCSVData(text).filter(p => (p.inStock||p.onDemand) && !p.hidden);
-    if(this.products.length===0){ throw new Error('Нет валидных товаров в CSV'); }
+    console.log('🔄 Loading products...');
+    
+    // Primary: API endpoint
+    const API_URL = window.SHEET_JSON_URL || '/api/items';
+    
+    // Fallback: Direct CSV
+    const FALLBACK_CSV = window.SHEET_CSV_URL || 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRfhgka5nFoR1TXYDGQ5CziYYqGSDXjhw_yJeO-MqFTb-k_RWlkjvaWxy9vBzLuKmo4KdCnz2SAdvMh/pub?gid=0&single=true&output=csv';
+    
+    // Try API first
+    try {
+      console.log('🚀 Trying API:', API_URL);
+      const response = await fetch(API_URL, { 
+        cache: 'no-store',
+        headers: {
+          'Accept': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        const jsonData = await response.json();
+        this.products = parseJSONData(jsonData).filter(p => (p.inStock || p.onDemand) && !p.hidden);
+        
+        if (this.products.length > 0) {
+          console.log(`✅ Loaded ${this.products.length} products from API`);
+          return;
+        }
+      }
+      
+      throw new Error(`API failed: ${response.status}`);
+      
+    } catch (apiError) {
+      console.warn('⚠️ API failed, trying CSV fallback:', apiError.message);
+    }
+    
+    // Fallback to CSV
+    try {
+      const cacheBuster = window.SHEET_CACHE_BUSTER || 'v=1';
+      const csvUrl = `${FALLBACK_CSV}&${cacheBuster}&t=${Date.now()}`;
+      
+      console.log('📄 Trying CSV:', csvUrl);
+      
+      const response = await fetch(csvUrl, { cache: 'no-store' });
+      
+      if (!response.ok) {
+        throw new Error(`CSV failed: HTTP ${response.status}`);
+      }
+      
+      const csvText = await response.text();
+      
+      if (!csvText || csvText.length < 20) {
+        throw new Error('Empty CSV response');
+      }
+      
+      this.products = parseCSVData(csvText).filter(p => (p.inStock || p.onDemand) && !p.hidden);
+      
+      if (this.products.length === 0) {
+        throw new Error('No valid products found in CSV');
+      }
+      
+      console.log(`✅ Loaded ${this.products.length} products from CSV`);
+      
+    } catch (csvError) {
+      console.error('❌ Both API and CSV failed:', csvError.message);
+      throw new Error(`Не удалось загрузить данные: ${csvError.message}`);
+    }
   }
 
   initializeFilters(){
@@ -104,7 +194,7 @@ class TileCatalog {
     this.populateCheckboxFilter('color-filters', Array.from(colors).sort());
   }
 
-  populateCheckboxFilter(id, items){ const c=document.getElementById(id); if(!c) return; c.innerHTML=''; items.forEach(it=>{ const w=document.createElement('div'); w.className='checkbox-item'; const cb=document.createElement('input'); cb.type='checkbox'; cb.id=`${id}-${it.toLowerCase().replace(/\s+/g,'-')}`; cb.value=it; const l=document.createElement('label'); l.htmlFor=cb.id; l.textContent=it; w.appendChild(cb); w.appendChild(l); c.appendChild(w); }); }
+  populateCheckboxFilter(id, items){ const c=document.getElementById(id); if(!c) return; c.innerHTML=''; items.forEach(it=>{ const w=document.createElement('div'); w.className='checkbox-item'; const cb=document.createElement('input'); cb.type='checkbox'; cb.id=`${id}-${it.toLowerCase().replace(/\s+/g,'-')}`; cb.value=it; const l=document.createElement('label'); l.htmlFor=cb.id; l.textContent=it; l.className='checkbox-text'; w.appendChild(cb); w.appendChild(l); c.appendChild(w); }); }
 
   bindEvents(){
     const search=document.getElementById('search-input'); if(search){ search.addEventListener('input',e=>{ this.filters.search=e.target.value.toLowerCase(); this.applyFilters(); }); }
@@ -116,7 +206,38 @@ class TileCatalog {
     if(pr){ pr.addEventListener('input',e=>{ this.filters.priceMax=parseFloat(e.target.value); if(pmax) pmax.value=this.filters.priceMax; this.applyFilters(); }); }
     const sort=document.getElementById('sort-select'); if(sort){ sort.addEventListener('change',e=>{ this.currentSort=e.target.value; this.applyFilters(); }); }
     document.querySelectorAll('.view-btn').forEach(btn=>{ btn.addEventListener('click',e=>{ const col=parseInt(e.currentTarget.dataset.columns); this.setGridView(col); }); });
+    const clearBtn=document.querySelector('.clear-btn'); if(clearBtn){ clearBtn.addEventListener('click',()=>{ this.clearFilters(); }); }
     this.bindModalEvents();
+  }
+
+  clearFilters() {
+    // Reset search
+    const search = document.getElementById('search-input');
+    if (search) search.value = '';
+    this.filters.search = '';
+    
+    // Uncheck all brand filters
+    document.querySelectorAll('#brand-filters input[type="checkbox"]').forEach(cb => cb.checked = false);
+    this.filters.brands.clear();
+    
+    // Uncheck all color filters  
+    document.querySelectorAll('#color-filters input[type="checkbox"]').forEach(cb => cb.checked = false);
+    this.filters.colors.clear();
+    
+    // Reset price range
+    const pmin = document.getElementById('price-min');
+    const pmax = document.getElementById('price-max'); 
+    const slider = document.getElementById('price-range');
+    
+    this.filters.priceMin = 0;
+    if (pmin) pmin.value = 0;
+    
+    const maxPrice = Math.max(...this.products.map(p => p.price));
+    this.filters.priceMax = maxPrice;
+    if (pmax) pmax.value = maxPrice;
+    if (slider) { slider.value = maxPrice; slider.max = maxPrice; }
+    
+    this.applyFilters();
   }
 
   applyFilters(){
