@@ -58,6 +58,7 @@
       <div class="catalog-layout">
         <aside id="filters-sidebar" class="filters-sidebar"></aside>
         <section class="products-area">
+          <div id="breadcrumbs-anchor"></div>
           <div class="products-toolbar"></div>
           <div id="filters-collapsible" class="filters-collapsible"></div>
           <div class="controls-box">
@@ -99,10 +100,11 @@
     </div>
   </div>
 
-  <!-- Загружаем модули в порядке зависимостей -->
+  <!-- Модули -->
   <script type="module" src="/src/categories-marketplace.js?v=9"></script>
   <script type="module" src="/src/categories.patch.js?v=9"></script>
   <script type="module" src="/src/catalog-enhanced.js?v=9"></script>
+  <script type="module" src="/src/breadcrumbs.taxonomy.js?v=9"></script>
   <script type="module" src="/src/main.js?v=9"></script>
 </body>
 </html>
