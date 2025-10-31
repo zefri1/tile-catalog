@@ -34,7 +34,7 @@ services:
     env: node
     plan: free
     rootDir: server
-    buildCommand: npm ci
+    buildCommand: npm install
     startCommand: node index.js
     autoDeploy: true
     healthCheckPath: /healthz
