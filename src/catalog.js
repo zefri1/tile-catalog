@@ -84,10 +84,9 @@ class TileCatalog {
 
   showErrorOverlay(message){
     console.error('Error:', message);
-    // Simple error display
     const errorDiv = document.createElement('div');
-    errorDiv.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;padding:20px;border:2px solid #f44;border-radius:8px;z-index:9999;';
-    errorDiv.innerHTML = `<h3>Ошибка загрузки</h3><p>${message}</p><button onclick="this.parentElement.remove();location.reload()">Перезагрузить</button>`;
+    errorDiv.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:var(--color-surface-elevated);padding:2rem;border:2px solid var(--color-error);border-radius:var(--border-radius);z-index:9999;box-shadow:var(--shadow-xl);text-align:center;';
+    errorDiv.innerHTML = `<div class="error-icon">⚠️</div><h3>Ошибка загрузки</h3><p>${message}</p><button onclick="this.parentElement.remove();location.reload()" class="btn btn-primary">Перезагрузить</button>`;
     document.body.appendChild(errorDiv);
   }
 
@@ -149,24 +148,40 @@ class TileCatalog {
     if(!sidebar) return;
     
     sidebar.innerHTML = `
-      <div class="filters-header">
-        <h2>Фильтры</h2>
-        <button id="clear-filters" class="btn-clear">Сбросить</button>
-      </div>
-      <div class="filter-group">
-        <label class="filter-label">Поиск:</label>
-        <input type="text" id="search-input" class="filter-input" placeholder="Введите название...">
-      </div>
-      <div class="filter-group">
-        <label class="filter-label">Бренды:</label>
-        <div class="filter-checkboxes" id="brand-filters">
-          ${brands.map(b => `<label><input type="checkbox" value="${b}">${b}</label>`).join('')}
+      <div class="filters-panel">
+        <div class="filters-header">
+          <h2>Фильтры</h2>
+          <button id="clear-filters" class="clear-btn">Сбросить</button>
         </div>
-      </div>
-      <div class="filter-group">
-        <label class="filter-label">Цвета:</label>
-        <div class="filter-checkboxes" id="color-filters">
-          ${colors.map(c => `<label><input type="checkbox" value="${c}">${c}</label>`).join('')}
+        <div class="filters-content">
+          <div class="filter-group">
+            <label class="filter-label" for="search-input">ПОИСК:</label>
+            <input type="text" id="search-input" class="search-input" placeholder="Введите название..." autocomplete="off">
+          </div>
+          <div class="filter-group">
+            <label class="filter-label">БРЕНДЫ:</label>
+            <div class="checkbox-group" id="brand-filters">
+              ${brands.map(brand => `
+                <div class="checkbox-item">
+                  <input type="checkbox" id="brand-${brand.replace(/[^\w]/g, '_')}" value="${brand}" class="filter-checkbox">
+                  <span class="checkbox-text">${brand}</span>
+                </div>
+              `).join('')}
+              ${brands.length > 8 ? '<div class="more-filters-hint">Прокрутите для просмотра всех</div>' : ''}
+            </div>
+          </div>
+          <div class="filter-group">
+            <label class="filter-label">ЦВЕТА:</label>
+            <div class="checkbox-group" id="color-filters">
+              ${colors.map(color => `
+                <div class="checkbox-item">
+                  <input type="checkbox" id="color-${color.replace(/[^\w]/g, '_')}" value="${color}" class="filter-checkbox">
+                  <span class="checkbox-text">${color}</span>
+                </div>
+              `).join('')}
+              ${colors.length > 8 ? '<div class="more-filters-hint">Прокрутите для просмотра всех</div>' : ''}
+            </div>
+          </div>
         </div>
       </div>
     `;
@@ -180,8 +195,8 @@ class TileCatalog {
       this.applyFilters();
     });
 
-    // Brand filters
-    document.querySelectorAll('#brand-filters input').forEach(cb => {
+    // Brand filters - исправленные селекторы
+    document.querySelectorAll('#brand-filters .filter-checkbox').forEach(cb => {
       cb.addEventListener('change', (e) => {
         if(e.target.checked) this.filters.brands.add(e.target.value);
         else this.filters.brands.delete(e.target.value);
@@ -189,8 +204,8 @@ class TileCatalog {
       });
     });
 
-    // Color filters
-    document.querySelectorAll('#color-filters input').forEach(cb => {
+    // Color filters - исправленные селекторы
+    document.querySelectorAll('#color-filters .filter-checkbox').forEach(cb => {
       cb.addEventListener('change', (e) => {
         if(e.target.checked) this.filters.colors.add(e.target.value);
         else this.filters.colors.delete(e.target.value);
@@ -204,7 +219,9 @@ class TileCatalog {
       this.filters.search = '';
       this.filters.brands.clear();
       this.filters.colors.clear();
-      document.querySelectorAll('.filter-checkboxes input').forEach(cb => cb.checked = false);
+      // Reset checkboxes
+      document.querySelectorAll('.filter-checkbox').forEach(cb => cb.checked = false);
+      // Reset search input
       if(searchInput) searchInput.value = '';
       this.applyFilters();
     });
@@ -219,14 +236,28 @@ class TileCatalog {
     // View buttons
     document.querySelectorAll('.view-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
-        document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.view-btn').forEach(b => {
+          b.classList.remove('active');
+          b.setAttribute('aria-pressed', 'false');
+        });
         e.target.classList.add('active');
+        e.target.setAttribute('aria-pressed', 'true');
         this.currentView = parseInt(e.target.dataset.columns);
         const grid = document.getElementById('products-grid');
         if(grid) {
           grid.className = `products-grid grid-${this.currentView}`;
         }
       });
+    });
+
+    // Theme toggle
+    const themeBtn = document.getElementById('theme-toggle');
+    if(themeBtn) themeBtn.addEventListener('click', () => {
+      const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+      const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+      themeBtn.querySelector('.theme-icon').textContent = newTheme === 'dark' ? '☀️' : '🌙';
     });
   }
 
@@ -239,7 +270,8 @@ class TileCatalog {
       filtered = filtered.filter(p => 
         p.name.toLowerCase().includes(search) ||
         p.brand.toLowerCase().includes(search) ||
-        p.color.toLowerCase().includes(search)
+        p.color.toLowerCase().includes(search) ||
+        p.collection.toLowerCase().includes(search)
       );
     }
     
@@ -265,8 +297,8 @@ class TileCatalog {
     switch(this.currentSort) {
       case 'price-asc': products.sort((a,b) => a.price - b.price); break;
       case 'price-desc': products.sort((a,b) => b.price - a.price); break;
-      case 'name-asc': products.sort((a,b) => a.name.localeCompare(b.name)); break;
-      case 'name-desc': products.sort((a,b) => b.name.localeCompare(a.name)); break;
+      case 'name-asc': products.sort((a,b) => a.name.localeCompare(b.name, 'ru')); break;
+      case 'name-desc': products.sort((a,b) => b.name.localeCompare(a.name, 'ru')); break;
     }
   }
 
@@ -283,17 +315,19 @@ class TileCatalog {
     grid.innerHTML=''; this.renderIndex=0; 
     const renderChunk=()=>{
       const slice=this.filteredProducts.slice(this.renderIndex, this.renderIndex+this.batchSize);
-      const html = slice.map(p=>{ 
+      const html = slice.map((p, idx)=>{ 
         const badge=p.inStock?'<span class="status-badge status-in-stock">В НАЛИЧИИ</span>':'<span class="status-badge status-on-demand">ПОД ЗАКАЗ</span>'; 
         const img=p.image?`<img src="${p.image}" alt="${p.name}" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">`:''; 
         const ph=`<div class="product-placeholder" ${p.image?'style="display:none"':''}>🏠</div>`; 
-        return `<article class="product-card" data-product-id="${p.id}">
+        const animationDelay = (this.renderIndex + idx) % 12 * 0.1;
+        return `<article class="product-card" data-product-id="${p.id}" style="animation-delay: ${animationDelay}s;">
           <div class="product-image">${img}${ph}</div>
           <div class="product-info">
             <h3 class="product-name">${p.name}</h3>
             <p class="product-brand">${p.brand}</p>
             <p class="product-color">${p.color}</p>
-            <div class="product-price">${p.price} ₽</div>
+            ${p.size ? `<span class="product-card__size">${p.size}</span>` : ''}
+            <div class="product-price">${p.price.toLocaleString('ru-RU')} ₽</div>
             <div class="product-status">${badge}</div>
           </div>
         </article>`; 
@@ -319,15 +353,23 @@ class TileCatalog {
       document.querySelector('.products-area').appendChild(container);
       btn = container.querySelector('#load-more-btn');
     }
+    btn.style.display = this.renderIndex >= this.filteredProducts.length ? 'none' : 'block';
     btn.onclick=()=>{
-      this.batchSize += 60; // увеличим порцию
+      this.batchSize += 60;
       this.renderProducts();
     };
   }
 
   attachCardClicks(){
     const grid=document.getElementById('products-grid');
-    grid.querySelectorAll('.product-card').forEach(card=>{ card.addEventListener('click',()=>{ const id=card.dataset.productId; const p=this.filteredProducts.find(x=>x.id===id); if(p) this.openModal(p); }); });
+    if(!grid) return;
+    grid.querySelectorAll('.product-card').forEach(card=>{ 
+      card.addEventListener('click',()=>{ 
+        const id=card.dataset.productId; 
+        const p=this.filteredProducts.find(x=>x.id===id); 
+        if(p) this.openModal(p); 
+      }); 
+    });
   }
 
   openModal(product){
@@ -338,7 +380,7 @@ class TileCatalog {
     document.getElementById('modal-title').textContent = product.name;
     document.getElementById('modal-brand').textContent = product.brand;
     document.getElementById('modal-color').textContent = product.color;
-    document.getElementById('modal-price').textContent = `${product.price} ₽`;
+    document.getElementById('modal-price').textContent = `${product.price.toLocaleString('ru-RU')} ₽`;
     document.getElementById('modal-desc').textContent = product.description || 'Описание отсутствует';
     document.getElementById('modal-status').textContent = product.inStock ? 'В наличии' : 'Под заказ';
     
@@ -355,8 +397,8 @@ class TileCatalog {
     
     // Show modal
     modal.setAttribute('aria-hidden', 'false');
-    modal.style.display = 'block';
-    document.body.style.overflow = 'hidden';
+    modal.classList.add('open');
+    document.body.classList.add('modal-open');
     
     // Focus management
     const closeBtn = modal.querySelector('.modal__close');
@@ -365,8 +407,8 @@ class TileCatalog {
     // Close handlers
     const closeModal = () => {
       modal.setAttribute('aria-hidden', 'true');
-      modal.style.display = 'none';
-      document.body.style.overflow = '';
+      modal.classList.remove('open');
+      document.body.classList.remove('modal-open');
     };
     
     modal.querySelector('.modal__close').onclick = closeModal;
@@ -384,5 +426,21 @@ class TileCatalog {
   }
 }
 
-let catalog=null; if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded',()=>{ catalog=new TileCatalog(); catalog.init(); }); } else { catalog=new TileCatalog(); catalog.init(); }
-window.TileCatalog=catalog; export default TileCatalog;
+// Initialize theme from localStorage
+const savedTheme = localStorage.getItem('theme') || 'light';
+document.documentElement.setAttribute('data-theme', savedTheme);
+const themeIcon = document.querySelector('#theme-toggle .theme-icon');
+if(themeIcon) themeIcon.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
+
+let catalog=null; 
+if(document.readyState==='loading'){ 
+  document.addEventListener('DOMContentLoaded',()=>{ 
+    catalog=new TileCatalog(); 
+    catalog.init(); 
+  }); 
+} else { 
+  catalog=new TileCatalog(); 
+  catalog.init(); 
+}
+window.TileCatalog=catalog; 
+export default TileCatalog;
