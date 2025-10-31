@@ -1,45 +1,26 @@
-# Render deployment configuration for tile catalog
-# Static frontend (Vite) + Node API service
+# Render configuration for static Vite build
+# Docs: https://render.com/docs/infrastructure-as-code
 
 services:
-  # Static frontend - Vite build
-  - type: web
-    name: tile-catalog-web
-    env: static
+  - type: static_site
+    name: tile-catalog
+    envVars:
+      - key: NODE_VERSION
+        value: 20
     buildCommand: npm ci && npm run build
     staticPublishPath: dist
-    pullRequestPreviewsEnabled: true
+    # Optional: custom headers for better caching + respect hashed filenames
     headers:
-      - path: /*
+      - path: /assets/**
         name: Cache-Control
-        value: public, max-age=300
-      - path: /assets/*
-        name: Cache-Control  
-        value: public, max-age=31536000
+        value: public, max-age=31536000, immutable
+      - path: /index.html
+        name: Cache-Control
+        value: no-cache
     routes:
+      - type: redirect
+        source: /index.html
+        destination: /
       - type: rewrite
-        source: /.*
+        source: /.*/
         destination: /index.html
-    envVars:
-      - key: VITE_API_URL
-        value: https://tile-catalog-api.onrender.com
-      - key: VITE_SHEET_CSV_URL
-        sync: false
-      - key: VITE_CACHE_BUSTER
-        value: v=1
-
-  # API service - Node/Express
-  - type: web
-    name: tile-catalog-api
-    env: node
-    plan: free
-    rootDir: server
-    buildCommand: npm install
-    startCommand: node index.js
-    autoDeploy: true
-    healthCheckPath: /healthz
-    envVars:
-      - key: SHEET_CSV_URL
-        sync: false
-      - key: NODE_ENV
-        value: production
