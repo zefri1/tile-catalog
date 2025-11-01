@@ -94,27 +94,41 @@ function parseCSVData(csvContent) {
 
 class TileCatalog {
   constructor() {
-    this.products = []; 
-    this.filteredProducts = []; 
-    this.currentSort = 'price-asc'; 
+    this.products = [];
+    this.filteredProducts = [];
+    this.currentSort = 'price-asc';
     this.currentView = 2;
-    this.filters = { 
-      search: '', 
-      brands: new Set(), 
-      colors: new Set(), 
-      countries: new Set(), 
-      surfaces: new Set(), 
-      uses: new Set(), 
-      structs: new Set(), 
-      categories: new Set(), 
-      priceMin: 0, 
-      priceMax: 1250 
+    this.filters = {
+      search: '',
+      brands: new Set(),
+      colors: new Set(),
+      countries: new Set(),
+      surfaces: new Set(),
+      uses: new Set(),
+      structs: new Set(),
+      categories: new Set(),
+      priceMin: 0,
+      priceMax: 1250
     };
-    this.isInitialized = false; 
-    this.batchSize = 40; 
+    this.isInitialized = false;
+    this.batchSize = 40;
     this.renderIndex = 0;
-    
+
     this.categoryNavigator = null;
+
+    // Кэш DOM и функции для очистки слушателей
+    this.dom = {
+      grid: null,
+      noResults: null,
+      productsArea: null,
+      loadMoreBtn: null
+    };
+
+    this.boundHandlers = {
+      onCardClick: null,
+      onLoadMore: null,
+      onEsc: null
+    };
   }
 
   showLoadingScreen() { const screen = document.getElementById('loading-screen'); if (screen) screen.style.display = 'flex'; }
@@ -123,12 +137,12 @@ class TileCatalog {
 
   async init() {
     this.showLoadingScreen();
-    try { 
-      await this.loadProducts(); 
-      this.initializeFilters(); 
-      this.bindEvents(); 
+    try {
+      await this.loadProducts();
+      this.initializeFilters();
+      this.bindEvents();
       if (window.MarketplaceCategoryNavigator) { this.categoryNavigator = new window.MarketplaceCategoryNavigator(this); this.categoryNavigator.init(); }
-      this.applyFilters(); 
+      this.applyFilters();
     }
     catch (err) { this.showErrorOverlay(err.message || 'Ошибка'); }
     finally { this.hideLoadingScreen(); this.isInitialized = true; }
@@ -236,24 +250,6 @@ class TileCatalog {
 
     const viewBtns = document.querySelectorAll('.view-btn');
     if (viewBtns) viewBtns.forEach(btn => { btn.addEventListener('click', (e) => { document.querySelectorAll('.view-btn').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-pressed','false');}); e.target.classList.add('active'); e.target.setAttribute('aria-pressed','true'); this.currentView = parseInt(e.target.dataset.columns); const grid=document.getElementById('products-grid'); if(grid) grid.className=`products-grid grid-${this.currentView}`; }); });
-
-    // Theme toggle functionality
-    const themeToggle = document.getElementById('theme-toggle');
-    if (themeToggle) {
-      themeToggle.addEventListener('click', (e) => {
-        e.preventDefault();
-        const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
-        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-        
-        document.documentElement.setAttribute('data-theme', newTheme);
-        localStorage.setItem('theme', newTheme);
-        
-        const themeIcon = themeToggle.querySelector('.theme-icon');
-        if (themeIcon) {
-          themeIcon.textContent = newTheme === 'dark' ? '☀️' : '🌙';
-        }
-      });
-    }
   }
 
   clearAllFilters() {
@@ -266,6 +262,23 @@ class TileCatalog {
     if(searchInput) searchInput.value='';
     if (this.categoryNavigator) { this.categoryNavigator.reset(); }
     this.applyFilters();
+  }
+
+  // Очистка слушателей и ссылок на DOM перед повторной отрисовкой
+  cleanupRenderedGrid() {
+    if (this.dom.grid) {
+      // Удаляем обработчики с карточек
+      if (this.boundHandlers.onCardClick) {
+        this.dom.grid.removeEventListener('click', this.boundHandlers.onCardClick);
+      }
+    }
+
+    if (this.dom.loadMoreBtn && this.boundHandlers.onLoadMore) {
+      this.dom.loadMoreBtn.removeEventListener('click', this.boundHandlers.onLoadMore);
+    }
+
+    this.boundHandlers.onCardClick = null;
+    this.boundHandlers.onLoadMore = null;
   }
 
   applyFilters() {
@@ -294,8 +307,16 @@ class TileCatalog {
   }
 
   renderProducts() {
-    const grid = document.getElementById('products-grid'); 
-    const nr = document.getElementById('no-results'); 
+    // Очистка прошлых слушателей и DOM ссылок
+    this.cleanupRenderedGrid();
+
+    // Кэш DOM
+    this.dom.grid = document.getElementById('products-grid');
+    this.dom.noResults = document.getElementById('no-results');
+    this.dom.productsArea = document.querySelector('.products-area');
+
+    const grid = this.dom.grid;
+    const nr = this.dom.noResults;
     if (!grid || !nr) return; 
     
     if (!this.filteredProducts || this.filteredProducts.length === 0) { 
@@ -344,7 +365,6 @@ class TileCatalog {
       } else { 
         this.attachCardClicks(); 
         this.ensureLoadMore();
-        // Update cart UI after rendering products
         if (window.updateCartUI) {
           window.updateCartUI();
         }
@@ -361,28 +381,43 @@ class TileCatalog {
       const container = document.createElement('div'); 
       container.className = 'load-more-container'; 
       container.innerHTML = `<button id="load-more-btn" class="load-more-btn">Показать ещё</button>`; 
-      const productsArea = document.querySelector('.products-area'); 
-      if (productsArea) productsArea.appendChild(container); 
+      if (this.dom.productsArea) this.dom.productsArea.appendChild(container); 
       btn = container.querySelector('#load-more-btn'); 
     } 
+
+    // Снимаем старый обработчик если был
+    if (this.dom.loadMoreBtn && this.boundHandlers.onLoadMore) {
+      this.dom.loadMoreBtn.removeEventListener('click', this.boundHandlers.onLoadMore);
+    }
+
+    this.dom.loadMoreBtn = btn;
+
     if (btn) { 
       btn.style.display = this.renderIndex >= this.filteredProducts.length ? 'none' : 'block'; 
-      btn.onclick = () => { this.batchSize += 60; this.renderProducts(); }; 
+      this.boundHandlers.onLoadMore = () => { this.batchSize += 60; this.renderProducts(); };
+      btn.addEventListener('click', this.boundHandlers.onLoadMore);
     } 
   }
 
   attachCardClicks() { 
-    const grid = document.getElementById('products-grid'); 
+    const grid = this.dom.grid; 
     if (!grid) return; 
-    const cards = grid.querySelectorAll('.product-card'); 
-    if (cards) cards.forEach(card => { 
-      card.addEventListener('click', (e) => { 
-        if(e.target.closest('.add-to-cart') || e.target.closest('.product-qty')) return; // не открывать модалку при клике по кнопкам
-        const id = card.dataset.productId; 
-        const p = this.filteredProducts.find(x => x.id === id); 
-        if (p) this.openModal(p); 
-      }); 
-    }); 
+
+    // Делегируем клики на grid, вместо навешивания на каждую карточку
+    if (this.boundHandlers.onCardClick) {
+      grid.removeEventListener('click', this.boundHandlers.onCardClick);
+    }
+
+    this.boundHandlers.onCardClick = (e) => {
+      const card = e.target.closest('.product-card');
+      if (!card) return;
+      if(e.target.closest('.add-to-cart') || e.target.closest('.product-qty')) return;
+      const id = card.dataset.productId; 
+      const p = this.filteredProducts.find(x => x.id === id); 
+      if (p) this.openModal(p);
+    };
+
+    grid.addEventListener('click', this.boundHandlers.onCardClick);
   }
 
   openModal(product) { 
@@ -410,15 +445,25 @@ class TileCatalog {
     modal.classList.add('open'); 
     document.body.classList.add('modal-open'); 
     const closeBtn = modal.querySelector('.modal__close'); if (closeBtn) closeBtn.focus(); 
-    const closeModal = () => { modal.setAttribute('aria-hidden', 'true'); modal.classList.remove('open'); document.body.classList.remove('modal-open'); }; 
-    const modalCloseBtn = modal.querySelector('.modal__close'); 
-    const modalBackdrop = modal.querySelector('.modal__backdrop'); 
-    if (modalCloseBtn) modalCloseBtn.onclick = closeModal; 
-    if (modalBackdrop) modalBackdrop.onclick = closeModal; 
-    const handleEsc = (e) => { if (e.key === 'Escape') { closeModal(); document.removeEventListener('keydown', handleEsc); } }; 
-    document.addEventListener('keydown', handleEsc);
-    
-    // Update modal cart button state
+
+    const closeModal = () => { 
+      modal.setAttribute('aria-hidden', 'true'); 
+      modal.classList.remove('open'); 
+      document.body.classList.remove('modal-open'); 
+      // Очистка обработчиков модалки
+      modal.removeEventListener('click', onBackdrop);
+      modal.removeEventListener('click', onCloseBtn);
+      document.removeEventListener('keydown', onEsc);
+    };
+
+    const onBackdrop = (e) => { if (e.target.classList.contains('modal__backdrop')) closeModal(); };
+    const onCloseBtn = (e) => { if (e.target.classList.contains('modal__close')) closeModal(); };
+    const onEsc = (e) => { if (e.key === 'Escape') closeModal(); };
+
+    modal.addEventListener('click', onBackdrop);
+    modal.addEventListener('click', onCloseBtn);
+    document.addEventListener('keydown', onEsc);
+
     if (window.updateCartUI) {
       window.updateCartUI();
     }
