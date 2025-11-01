@@ -1,40 +1,30 @@
 /* Header action buttons (phone, VK, theme) — light pill style */
-.header .header-actions{display:flex;gap:.5rem}
+.header .header-actions{display:flex;gap:.5rem;align-items:center}
+
+/* Order helper (cart, phone, vk, theme) */
+.header .header-actions #cart-btn{order:1}
+.header .header-actions a[href^="tel"]{order:2}
+.header .header-actions a[title="VK"]{order:3}
+.header .header-actions #theme-toggle{order:4}
+
 .header .action-btn{display:inline-flex;align-items:center;justify-content:center;min-width:44px;height:40px;padding:0 .75rem;border-radius:12px;border:1px solid color-mix(in oklab,var(--color-border) 70%,transparent);background:rgba(255,255,255,.6);backdrop-filter:saturate(140%) blur(6px);-webkit-backdrop-filter:saturate(140%) blur(6px);box-shadow:0 1px 2px rgba(0,0,0,.04);color:var(--color-text);transition:all .18s ease;white-space:nowrap}
 .header .action-btn:hover{background:rgba(255,255,255,.9);border-color:color-mix(in oklab,var(--color-border) 90%,transparent);box-shadow:0 2px 6px rgba(0,0,0,.06)}
 .header .action-btn:active{transform:translateY(1px)}
 
-/* Продолговатая яркая кнопка телефона */
-.header .action-btn[href^="tel"]{
-  background:linear-gradient(135deg, #ffed4e 0%, #ffdd00 100%);
-  border:2px solid #e6c300;
-  color:#222;
-  height:44px; /* чуть выше остальных */
-  min-width:160px; /* продолговатая форма */
-  padding:0 1.25rem; /* внутренние отступы */
-  gap:.6rem;
-  font-weight:700;
-  font-size:14px;
-  line-height:1; 
-  justify-content:center; /* центрировать текст */
-}
+/* Phone button (elongated) */
+.header .action-btn[href^="tel"]{background:linear-gradient(135deg, #ffed4e 0%, #ffdd00 100%);border:2px solid #e6c300;color:#222;height:44px;min-width:160px;padding:0 1.25rem;gap:.6rem;font-weight:700;font-size:14px;line-height:1;justify-content:center}
 .header .action-btn[href^="tel"] .icon{font-size:18px}
 .header .action-btn[href^="tel"]:hover{background:linear-gradient(135deg, #ffdd00 0%, #ffd000 100%);border-color:#d4af00;box-shadow:0 4px 12px rgba(255,221,0,.45);transform:translateY(-1px)}
 .header .action-btn[href^="tel"]:active{transform:translateY(0)}
 
-/* Убираем фиксированную минимальную ширину у остальных, чтобы не мешала длинной кнопке */
-.header .action-btn:not([href^="tel"]) {min-width:44px}
-
 /* VK icon sizes */
+#product-modal #modal-vk-btn .icon{width:28px;height:28px}
 .header .action-btn[title="VK"] .icon{width:20px;height:20px}
-#product-modal #modal-vk-btn .icon{width:24px;height:24px}
 #cart-modal .cart-actions .btn .icon{width:20px;height:20px}
 svg.icon{color:currentColor;fill:currentColor}
 svg.icon use{pointer-events:none}
 
-.header .icon-vk{width:18px;height:18px}
-.header .action-btn .icon{font-size:16px}
-/* Dark theme adjustments */
+/* Dark theme */
 [data-theme="dark"] .header .action-btn{background:rgba(255,255,255,.06);border-color:color-mix(in oklab, var(--color-border) 50%, transparent);color:var(--color-text)}
 [data-theme="dark"] .header .action-btn:hover{background:rgba(255,255,255,.12)}
 [data-theme="dark"] .header .action-btn[href^="tel"]{background:linear-gradient(135deg, #ffed4e 0%, #ffdd00 100%);border:2px solid #e6c300;color:#222}
