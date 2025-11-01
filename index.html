@@ -443,22 +443,22 @@
             <h1>Плиточник</h1>
             <p class="brand-tagline">Каталог керамической плитки</p>
           </div>
-          <div class="logo"><div class="logo-circle"><img src="cat.png" alt="Плиточник" loading="lazy"></div></div>
-          <div class="brand-info"><h1>Плиточник</h1><p class="brand-tagline">Каталог керамической плитки</p></div>
         </div>
+
         <div class="header-actions">
-          <a href="tel:+74951234567" class="action-btn" title="Позвонить" aria-label="Позвонить"><span class="icon">📞</span><span>Позвонить</span></a>
+          <!-- Порядок: Корзина, Позвонить, VK, Тема -->
+          <button id="cart-btn" class="action-btn" title="Корзина" aria-label="Корзина">
+            <svg class="icon"><use href="#cart-icon"></use></svg>
+          </button>
+          <a href="tel:+74951234567" class="action-btn" title="Позвонить" aria-label="Позвонить">
+            <span class="icon">📞</span><span>Позвонить</span>
+          </a>
           <a href="https://vk.com/plitochik44" target="_blank" class="action-btn" title="VK" aria-label="VK">
             <svg class="icon"><use href="#vk-icon"></use></svg>
           </a>
-          <!-- Порядок: Корзина, Позвонить, VK, Тема -->
-          <button id="cart-btn" class="action-btn" title="Корзина" aria-label="Корзина" style="position: relative;">
-            <svg class="icon"><use href="#cart-icon"></use></svg>
-            <span id="cart-counter" class="cart-counter hidden">0</span>
+          <button id="theme-toggle" class="action-btn" title="Сменить тему" aria-label="Сменить тему">
+            <span class="theme-icon">🌙</span>
           </button>
-          <a href="tel:+74951234567" class="action-btn" title="Позвонить" aria-label="Позвонить"><span class="icon">📞</span><span>Позвонить</span></a>
-          <a href="https://vk.com/plitochik44" target="_blank" class="action-btn" title="VK" aria-label="VK"><svg class="icon"><use href="#vk-icon"></use></svg></a>
-          <button id="theme-toggle" class="action-btn" title="Сменить тему" aria-label="Сменить тему"><span class="theme-icon">🌙</span></button>
         </div>
       </div>
     </div>
