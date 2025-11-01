@@ -1,5 +1,28 @@
 import { Cart, updateCartUI } from './cart.js';
 
+// Функция для обновления SVG иконок при переключении темы
+function updateCartIconsForTheme(theme) {
+  const cartIcons = document.querySelectorAll('.icon use[href="#cart-icon"]');
+  const isDark = theme === 'dark';
+  
+  cartIcons.forEach(icon => {
+    const svg = icon.closest('svg');
+    if (svg) {
+      // Обновляем цвет SVG в зависимости от темы
+      svg.style.color = isDark ? '#f1f5f9' : '#1e293b';
+    }
+  });
+  
+  // Обновляем также VK иконки
+  const vkIcons = document.querySelectorAll('.icon use[href="#vk-icon"]');
+  vkIcons.forEach(icon => {
+    const svg = icon.closest('svg');
+    if (svg) {
+      svg.style.color = isDark ? '#f1f5f9' : '#1e293b';
+    }
+  });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   // Initialize cart UI
   updateCartUI();
@@ -10,6 +33,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const currentTheme = localStorage.getItem('theme') || 'light';
   document.documentElement.setAttribute('data-theme', currentTheme);
   if (themeIcon) themeIcon.textContent = currentTheme === 'dark' ? '☀️' : '🌙';
+  
+  // Обновляем иконки при загрузке
+  updateCartIconsForTheme(currentTheme);
 
   themeToggle?.addEventListener('click', () => {
     const current = document.documentElement.getAttribute('data-theme');
@@ -17,6 +43,9 @@ document.addEventListener('DOMContentLoaded', () => {
     document.documentElement.setAttribute('data-theme', newTheme);
     localStorage.setItem('theme', newTheme);
     if (themeIcon) themeIcon.textContent = newTheme === 'dark' ? '☀️' : '🌙';
+    
+    // Обновляем SVG иконки корзины при переключении темы
+    updateCartIconsForTheme(newTheme);
   });
 
   // Cart modal functionality
@@ -131,8 +160,8 @@ document.addEventListener('DOMContentLoaded', () => {
       };
     }
     
-    // Используем toggle вместо add
-    Cart.toggle(product);
+    // Используем add вместо toggle для корректного увеличения количества
+    Cart.add(product);
   });
 
   // Grid view controls
