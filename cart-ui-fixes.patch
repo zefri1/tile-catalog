@@ -1,0 +1,31 @@
+# Исправления для корректной работы корзины
+
+## 1. Добавить иконку галочки в index.html (в секцию SVG symbols):
+
+```html
+<symbol id="cart-check-icon" viewBox="0 0 24 24" fill="none">
+  <path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9c1.94 0 3.73.62 5.19 1.68" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</symbol>
+```
+
+## 2. Добавить CSS стили в styles.css:
+
+```css
+/* Стили для кнопки "В корзине" */
+.add-to-cart.in-cart {
+  background: var(--color-success, #10b981);
+  border-color: var(--color-success, #10b981);
+}
+
+.add-to-cart.in-cart .cart-text {
+  color: white;
+}
+
+/* Переменная для успешного цвета если её нет */
+:root {
+  --color-success: #10b981;
+}
+```
+
+## 3. Обновить кеш-бастер до v=20 во всех файлах
