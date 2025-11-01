@@ -13,22 +13,34 @@
 .modal__actions #modal-vk-btn{width:64px;min-width:64px;padding:0;justify-content:center;margin-left:auto}
 .modal__actions #modal-vk-btn .icon{width:24px;height:24px}
 
-/* Единый размер иконки и текста в кнопке корзины */
+/* Единый размер иконки и текста в кнопке корзины модалки */
 .modal__actions #modal-add-to-cart .icon{width:28px;height:28px;margin-right:.5rem}
 .modal__actions #modal-add-to-cart .cart-text{font-size:16px}
 
-/* Круглая VK и hover */
+/* Круглая VK и hover - только в модалке */
 .modal__actions #modal-vk-btn{border-radius:999px}
 .modal__actions #modal-vk-btn:hover{background:var(--color-primary);border-color:var(--color-primary);color:#fff}
 
-/* Карточки каталога: кнопка в одну строку, без переноса текста */
-.product-card .add-to-cart{white-space:nowrap;display:flex;align-items:center;justify-content:center;gap:.5rem}
-.product-card .add-to-cart .icon{flex:0 0 auto}
-.product-card .add-to-cart .btn-text,.product-card .add-to-cart .cart-text{flex:0 0 auto}
+/* VK в модалках: скрыть span только для VK кнопок, не для всех кнопок */
+.modal__actions a.btn[title="Написать в VK"] span,
+.cart-actions a.btn[title="Написать в VK"] span {
+  display: none;
+}
 
-/* Фикс ширины: чтобы текст не переносился на 2 строки, расширяем паддинги и минимальную ширину */
-.product-card .add-to-cart{min-width:220px;padding:0 20px;height:64px;border-radius:12px}
-
-/* Контейнер карточки — прижать кнопку к низу, остальное не трогать */
+/* Карточки каталога: кнопка В корзину с текстом и иконкой */
 .products-grid .product-card{display:flex;flex-direction:column}
 .product-card .product-actions{margin-top:auto}
+.product-card .add-to-cart{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:.5rem;
+  height:64px;
+  padding:0 16px;
+  border-radius:12px;
+  white-space:nowrap;
+  font-size:16px;
+  min-width:180px;
+}
+.product-card .add-to-cart .icon{width:20px;height:20px;flex-shrink:0}
+.product-card .add-to-cart span{display:inline-block}
