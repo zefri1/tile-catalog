@@ -1,0 +1,167 @@
+/**
+ * Исправления тёмной темы - SVG иконки и переходы
+ */
+
+/* Основные стили для SVG иконок */
+.icon,
+.icon svg,
+svg.icon {
+  transition: color 0.3s ease, stroke 0.3s ease, fill 0.3s ease !important;
+}
+
+/* Иконки в светлой теме */
+[data-theme="light"] .icon,
+[data-theme="light"] .icon svg,
+[data-theme="light"] svg.icon {
+  color: #1e293b !important;
+  stroke: #1e293b !important;
+}
+
+[data-theme="light"] .icon use[href="#vk-icon"] {
+  fill: #1e293b !important;
+}
+
+/* Иконки в тёмной теме */
+[data-theme="dark"] .icon,
+[data-theme="dark"] .icon svg,
+[data-theme="dark"] svg.icon {
+  color: #f1f5f9 !important;
+  stroke: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .icon use[href="#vk-icon"] {
+  fill: #f1f5f9 !important;
+}
+
+/* Специальные стили для корзины */
+[data-theme="light"] #cart-btn svg,
+[data-theme="light"] .add-to-cart svg {
+  color: #1e293b !important;
+  stroke: #1e293b !important;
+}
+
+[data-theme="dark"] #cart-btn svg,
+[data-theme="dark"] .add-to-cart svg {
+  color: #f1f5f9 !important;
+  stroke: #f1f5f9 !important;
+}
+
+/* Исправления для кнопок действий в шапке */
+[data-theme="light"] .header-actions .action-btn svg {
+  color: #1e293b !important;
+  stroke: #1e293b !important;
+}
+
+[data-theme="dark"] .header-actions .action-btn svg {
+  color: #f1f5f9 !important;
+  stroke: #f1f5f9 !important;
+}
+
+/* Исправления для модальных окон */
+[data-theme="light"] .modal svg,
+[data-theme="light"] .modal .icon {
+  color: #1e293b !important;
+  stroke: #1e293b !important;
+}
+
+[data-theme="dark"] .modal svg,
+[data-theme="dark"] .modal .icon {
+  color: #f1f5f9 !important;
+  stroke: #f1f5f9 !important;
+}
+
+/* Особые случаи для VK иконок */
+[data-theme="light"] svg use[href="#vk-icon"],
+[data-theme="light"] .icon use[href="#vk-icon"] {
+  fill: #1e293b !important;
+}
+
+[data-theme="dark"] svg use[href="#vk-icon"],
+[data-theme="dark"] .icon use[href="#vk-icon"] {
+  fill: #f1f5f9 !important;
+}
+
+/* Принудительное обновление для всех SVG */
+svg {
+  transition: color 0.3s ease, stroke 0.3s ease, fill 0.3s ease !important;
+}
+
+[data-theme="light"] svg {
+  color: #1e293b;
+  stroke: #1e293b;
+}
+
+[data-theme="dark"] svg {
+  color: #f1f5f9;
+  stroke: #f1f5f9;
+}
+
+/* Переключатель темы - улучшенные стили */
+#theme-toggle {
+  transition: all 0.3s ease !important;
+}
+
+#theme-toggle:hover {
+  transform: translateY(-2px) !important;
+}
+
+#theme-toggle .theme-icon {
+  transition: transform 0.3s ease !important;
+  font-size: 1.2rem;
+}
+
+#theme-toggle:active .theme-icon {
+  transform: scale(0.9) !important;
+}
+
+/* Дополнительные исправления для контрастности */
+[data-theme="dark"] .action-btn:hover svg {
+  color: #1e293b !important;
+  stroke: #1e293b !important;
+}
+
+[data-theme="light"] .action-btn:hover svg {
+  color: #1e293b !important;
+  stroke: #1e293b !important;
+}
+
+/* Улучшенные стили для кнопок корзины */
+.add-to-cart {
+  transition: all 0.3s ease !important;
+}
+
+.add-to-cart svg {
+  transition: color 0.3s ease, stroke 0.3s ease !important;
+}
+
+/* Общие стили для смены темы */
+body {
+  transition: background-color 0.3s ease, color 0.3s ease !important;
+}
+
+.header {
+  transition: background-color 0.3s ease, border-color 0.3s ease !important;
+}
+
+.modal__dialog {
+  transition: background-color 0.3s ease, border-color 0.3s ease !important;
+}
+
+.product-card {
+  transition: background-color 0.3s ease, border-color 0.3s ease, transform 0.3s ease !important;
+}
+
+/* Принудительное обновление цветов с !important */
+[data-theme="light"] svg[class*="icon"],
+[data-theme="light"] .icon svg,
+[data-theme="light"] svg.icon {
+  color: #1e293b !important;
+  stroke: #1e293b !important;
+}
+
+[data-theme="dark"] svg[class*="icon"],
+[data-theme="dark"] .icon svg,
+[data-theme="dark"] svg.icon {
+  color: #f1f5f9 !important;
+  stroke: #f1f5f9 !important;
+}

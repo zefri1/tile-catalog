@@ -2,28 +2,56 @@ import { Cart, updateCartUI } from './cart.js';
 
 // Функция для обновления SVG иконок при переключении темы
 function updateCartIconsForTheme(theme) {
-  const cartIcons = document.querySelectorAll('.icon use[href="#cart-icon"]');
   const isDark = theme === 'dark';
+  const iconColor = isDark ? '#f1f5f9' : '#1e293b';
   
+  // Обновляем все SVG иконки корзины
+  const cartIcons = document.querySelectorAll('svg use[href="#cart-icon"], svg use[href="#cart-check-icon"]');
   cartIcons.forEach(icon => {
     const svg = icon.closest('svg');
     if (svg) {
-      // Обновляем цвет SVG в зависимости от темы
-      svg.style.color = isDark ? '#f1f5f9' : '#1e293b';
+      svg.style.color = iconColor;
+      // Принудительно обновляем стили
+      svg.style.stroke = iconColor;
+      svg.style.fill = iconColor;
     }
   });
   
-  // Обновляем также VK иконки
-  const vkIcons = document.querySelectorAll('.icon use[href="#vk-icon"]');
+  // Обновляем VK иконки
+  const vkIcons = document.querySelectorAll('svg use[href="#vk-icon"]');
   vkIcons.forEach(icon => {
     const svg = icon.closest('svg');
     if (svg) {
-      svg.style.color = isDark ? '#f1f5f9' : '#1e293b';
+      svg.style.color = iconColor;
+      svg.style.fill = iconColor;
+    }
+  });
+  
+  // Обновляем все иконки с классом .icon
+  const allIconSvgs = document.querySelectorAll('.icon svg, svg.icon');
+  allIconSvgs.forEach(svg => {
+    svg.style.color = iconColor;
+    if (svg.querySelector('use[href="#cart-icon"], use[href="#cart-check-icon"], use[href="#vk-icon"]')) {
+      svg.style.stroke = iconColor;
+      svg.style.fill = iconColor;
     }
   });
   
   // Диспатчим событие для уведомления о смене темы
   document.dispatchEvent(new CustomEvent('theme:changed', { detail: { theme } }));
+}
+
+// Дополнительная функция для принудительного обновления всех иконок
+function forceUpdateAllIcons() {
+  const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+  updateCartIconsForTheme(currentTheme);
+  
+  // Принудительно перерисовываем все SVG
+  document.querySelectorAll('svg').forEach(svg => {
+    svg.style.display = 'none';
+    svg.offsetHeight; // trigger reflow
+    svg.style.display = '';
+  });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -34,21 +62,31 @@ document.addEventListener('DOMContentLoaded', () => {
   const themeToggle = document.getElementById('theme-toggle');
   const themeIcon = themeToggle?.querySelector('.theme-icon');
   const currentTheme = localStorage.getItem('theme') || 'light';
+  
+  // Применяем тему при загрузке
   document.documentElement.setAttribute('data-theme', currentTheme);
   if (themeIcon) themeIcon.textContent = currentTheme === 'dark' ? '☀️' : '🌙';
   
-  // Обновляем иконки при загрузке
-  updateCartIconsForTheme(currentTheme);
+  // Обновляем иконки при загрузке с небольшой задержкой
+  setTimeout(() => {
+    updateCartIconsForTheme(currentTheme);
+    forceUpdateAllIcons();
+  }, 100);
 
   themeToggle?.addEventListener('click', () => {
     const current = document.documentElement.getAttribute('data-theme');
     const newTheme = current === 'dark' ? 'light' : 'dark';
+    
+    // Применяем новую тему
     document.documentElement.setAttribute('data-theme', newTheme);
     localStorage.setItem('theme', newTheme);
     if (themeIcon) themeIcon.textContent = newTheme === 'dark' ? '☀️' : '🌙';
     
-    // Обновляем SVG иконки корзины при переключении темы
-    updateCartIconsForTheme(newTheme);
+    // Обновляем SVG иконки с задержкой для корректного применения CSS
+    setTimeout(() => {
+      updateCartIconsForTheme(newTheme);
+      forceUpdateAllIcons();
+    }, 50);
   });
 
   // Cart modal functionality
@@ -59,6 +97,8 @@ document.addEventListener('DOMContentLoaded', () => {
     cartModal.classList.add('open');
     cartModal.setAttribute('aria-hidden', 'false');
     document.body.classList.add('modal-open');
+    // Обновляем иконки при открытии модального окна
+    setTimeout(forceUpdateAllIcons, 50);
   }
 
   function closeCart() {
@@ -107,8 +147,9 @@ document.addEventListener('DOMContentLoaded', () => {
     productModal.setAttribute('aria-hidden', 'false');
     document.body.classList.add('modal-open');
     
-    // Update the modal button state
+    // Update the modal button state and icons
     updateCartUI();
+    setTimeout(forceUpdateAllIcons, 50);
   }
 
   function closeProductModal() {
@@ -165,6 +206,9 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Используем toggle для правильного переключения состояния
     Cart.toggle(product);
+    
+    // Обновляем иконки после изменения корзины
+    setTimeout(forceUpdateAllIcons, 100);
   });
 
   // Grid view controls with proper column mapping
@@ -212,7 +256,10 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Listen for cart updates
-  document.addEventListener('cart:update', updateCartUI);
+  document.addEventListener('cart:update', () => {
+    updateCartUI();
+    setTimeout(forceUpdateAllIcons, 50);
+  });
   
   // Product card click handlers
   document.addEventListener('click', (e) => {
@@ -239,5 +286,17 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     
     openProductModal(product);
+  });
+  
+  // Дополнительное обновление иконок при изменении DOM
+  const observer = new MutationObserver(() => {
+    setTimeout(forceUpdateAllIcons, 100);
+  });
+  
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['class', 'data-theme']
   });
 });
