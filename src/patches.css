@@ -1,12 +1,3 @@
-/* replace 🧭 with uploaded cart svg everywhere */
-.btn-primary.add-to-cart::before,
-#modal-add-to-cart::before,
-#cart-btn::before{
-  content: '';
-  display:inline-block; width:16px; height:16px; margin-right:6px; vertical-align:-2px;
-  background: url('/cart-shopping-svgrepo-com.svg') no-repeat center/contain;
-}
-
 /* smoother animations for cards */
 .product-card{will-change:transform}
 .product-card:hover{transform:translateY(-4px)}
