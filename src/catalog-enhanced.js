@@ -236,6 +236,24 @@ class TileCatalog {
 
     const viewBtns = document.querySelectorAll('.view-btn');
     if (viewBtns) viewBtns.forEach(btn => { btn.addEventListener('click', (e) => { document.querySelectorAll('.view-btn').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-pressed','false');}); e.target.classList.add('active'); e.target.setAttribute('aria-pressed','true'); this.currentView = parseInt(e.target.dataset.columns); const grid=document.getElementById('products-grid'); if(grid) grid.className=`products-grid grid-${this.currentView}`; }); });
+
+    // Theme toggle functionality
+    const themeToggle = document.getElementById('theme-toggle');
+    if (themeToggle) {
+      themeToggle.addEventListener('click', (e) => {
+        e.preventDefault();
+        const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+        const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+        
+        document.documentElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+        
+        const themeIcon = themeToggle.querySelector('.theme-icon');
+        if (themeIcon) {
+          themeIcon.textContent = newTheme === 'dark' ? '☀️' : '🌙';
+        }
+      });
+    }
   }
 
   clearAllFilters() {
@@ -399,10 +417,17 @@ class TileCatalog {
   }
 }
 
+// Theme initialization
 const savedTheme = localStorage.getItem('theme') || 'light';
 document.documentElement.setAttribute('data-theme', savedTheme);
-const themeIcon = document.querySelector('#theme-toggle .theme-icon');
-if (themeIcon) themeIcon.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
+
+// Set initial theme icon
+document.addEventListener('DOMContentLoaded', () => {
+  const themeIcon = document.querySelector('#theme-toggle .theme-icon');
+  if (themeIcon) {
+    themeIcon.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
+  }
+});
 
 let catalog = null;
 if (document.readyState === 'loading') { 
