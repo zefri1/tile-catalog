@@ -110,7 +110,7 @@ export function updateCartUI() {
   // Update cart button icon based on theme
   updateCartButtonIcon();
   
-  // Update all add-to-cart buttons
+  // Update all add-to-cart buttons with improved state handling
   document.querySelectorAll('.add-to-cart').forEach(button => {
     const productId = button.dataset.id;
     if (!productId) return;
@@ -119,16 +119,22 @@ export function updateCartUI() {
     const textSpan = button.querySelector('.cart-text');
     const icon = button.querySelector('.icon use');
     
+    // Очистить предыдущие классы
+    button.classList.remove('in-cart');
+    
     if (cartItem && cartItem.qty > 0) {
       // Item is in cart
       button.classList.add('in-cart');
       if (textSpan) textSpan.textContent = 'В корзине';
-      if (icon) icon.setAttribute('href', '#cart-check-icon');
+      if (icon) {
+        icon.setAttribute('href', '#cart-check-icon');
+      }
     } else {
       // Item is not in cart
-      button.classList.remove('in-cart');
       if (textSpan) textSpan.textContent = 'В корзину';
-      if (icon) icon.setAttribute('href', '#cart-icon');
+      if (icon) {
+        icon.setAttribute('href', '#cart-icon');
+      }
     }
   });
   
