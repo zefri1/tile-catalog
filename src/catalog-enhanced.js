@@ -315,7 +315,14 @@ class TileCatalog {
         const img = p.image ? `<img src="${p.image}" alt="${p.name}" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">` : ''; 
         const ph = `<div class="product-placeholder" ${p.image ? 'style="display:none"' : ''}>🏠</div>`; 
         const animationDelay = (this.renderIndex + idx) % 12 * 0.1;
-        const cartIcon = '<svg class="icon-cart" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6.29977 5H21L19 12H7.37671M20 16H8L6 3H3M9 20C9 20.5523 8.55228 21 8 21C7.44772 21 7 20.5523 7 20C7 19.4477 7.44772 19 8 19C8.55228 19 9 19.4477 9 20ZM20 20C20 20.5523 19.5523 21 19 21C18.4477 21 18 20.5523 18 20C18 19.4477 18.4477 19 19 19C19.5523 19 20 19.4477 20 20Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';        
+        
+        // Проверяем, есть ли товар в корзине
+        const inCart = window.Cart && window.Cart.state[p.id] && window.Cart.state[p.id].qty > 0;
+        const cartQty = inCart ? window.Cart.state[p.id].qty : 0;
+        const cartClass = inCart ? 'in-cart' : '';
+        const cartText = inCart ? 'В корзине' : 'В корзину';
+        const counterStyle = inCart ? '' : 'style="display: none;"';
+        
         return `<article class="product-card" data-product-id="${p.id}" style="animation-delay: ${animationDelay}s;">
           <div class="product-image">${img}${ph}</div>
           <div class="product-info">
@@ -326,7 +333,11 @@ class TileCatalog {
             <div class="product-price">${p.price.toLocaleString('ru-RU')} ₽</div>
             <div class="product-status">${badge}</div>
             <div class="product-actions">
-              <button class="btn btn-primary add-to-cart" data-id="${p.id}">${cartIcon} В корзину</button>
+              <button class="btn btn-primary add-to-cart ${cartClass}" data-id="${p.id}">
+                <svg class="icon"><use href="#cart-icon"></use></svg>
+                <span class="cart-text">${cartText}</span>
+                <span class="cart-counter" ${counterStyle}>${cartQty}</span>
+              </button>
               <div class="product-qty" data-id="${p.id}" aria-live="polite">
                 <button class="qty-btn dec" aria-label="Уменьшить">–</button>
                 <span class="qty-value">0</span>
@@ -408,10 +419,8 @@ class TileCatalog {
     const closeBtn = modal.querySelector('.modal__close'); if (closeBtn) closeBtn.focus(); 
     const closeModal = () => { modal.setAttribute('aria-hidden', 'true'); modal.classList.remove('open'); document.body.classList.remove('modal-open'); }; 
     const modalCloseBtn = modal.querySelector('.modal__close'); 
-    const modalCloseBtnBottom = modal.querySelector('#modal-close-btn'); 
     const modalBackdrop = modal.querySelector('.modal__backdrop'); 
     if (modalCloseBtn) modalCloseBtn.onclick = closeModal; 
-    if (modalCloseBtnBottom) modalCloseBtnBottom.onclick = closeModal; 
     if (modalBackdrop) modalBackdrop.onclick = closeModal; 
     const handleEsc = (e) => { if (e.key === 'Escape') { closeModal(); document.removeEventListener('keydown', handleEsc); } }; 
     document.addEventListener('keydown', handleEsc); 
