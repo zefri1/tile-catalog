@@ -8,15 +8,21 @@ function totalSum(state){ return Object.values(state).reduce((a,i)=>a + (i.qty||
 export const Cart = {
   state: load(),
   
-  // Добавить товар в корзину (всегда количество = 1)
+  // Добавить товар в корзину (увеличивает количество если товар уже есть)
   add(item){
-    this.state[item.id] = { 
-      id: item.id, 
-      name: item.name, 
-      price: item.price || 0, 
-      image: item.image || '', 
-      qty: 1 
-    };
+    if(this.state[item.id]) {
+      // Если товар уже есть - увеличиваем количество
+      this.state[item.id].qty += 1;
+    } else {
+      // Если товара нет - добавляем с количеством 1
+      this.state[item.id] = { 
+        id: item.id, 
+        name: item.name, 
+        price: item.price || 0, 
+        image: item.image || '', 
+        qty: 1 
+      };
+    }
     save(this.state);
     document.dispatchEvent(new CustomEvent('cart:update'));
   },
@@ -101,18 +107,7 @@ export const Cart = {
 
 // UI update functions
 export function updateCartUI() {
-  // Update header cart counter
-  const headerCounter = document.getElementById('cart-counter');
-  const count = Cart.totalCount();
-  
-  if (headerCounter) {
-    headerCounter.textContent = count;
-    if (count > 0) {
-      headerCounter.classList.remove('hidden');
-    } else {
-      headerCounter.classList.add('hidden');
-    }
-  }
+  // Удален счетчик из хедера - теперь только кнопка корзины
   
   // Update all add-to-cart buttons
   document.querySelectorAll('.add-to-cart').forEach(button => {
