@@ -891,3 +891,63 @@ select:focus {
 [data-theme="dark"] .product-card__size {
   background: rgba(255, 255, 255, 0.1);
 }
+/* Add-to-cart: compact size fix */
+:root {
+  --cart-btn-height: 44px;
+  --cart-btn-font: 14px;
+  --cart-btn-pad-x: 16px;
+  --cart-btn-radius: 12px;
+  --cart-icon-size: 18px;
+}
+
+/* Базовые размеры и выравнивание */
+.product-card .btn-cart,
+.product-card button[data-role="add-to-cart"],
+button.cart-btn,
+button.add-to-cart {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: var(--cart-btn-height);
+  padding: 0 var(--cart-btn-pad-x);
+  font-size: var(--cart-btn-font);
+  line-height: 1;
+  border-radius: var(--cart-btn-radius);
+  /* Сохраняем ваш градиент/цвета; раскомментируйте, если нужно жестко зафиксировать */
+  /* background: linear-gradient(180deg, #FFC935 0%, #E6A60C 100%); */
+  /* color: #1A1F2A; */
+}
+
+/* Размеры иконки внутри кнопки */
+.product-card .btn-cart svg,
+.product-card .btn-cart img.icon,
+button.cart-btn svg,
+button.add-to-cart svg {
+  width: var(--cart-icon-size);
+  height: var(--cart-icon-size);
+  flex: 0 0 var(--cart-icon-size);
+}
+
+/* Небольшой акцент на ховере/нажатии */
+.product-card .btn-cart:hover,
+button.cart-btn:hover,
+button.add-to-cart:hover {
+  transform: translateY(-1px);
+}
+
+.product-card .btn-cart:active,
+button.cart-btn:active,
+button.add-to-cart:active {
+  transform: translateY(0);
+}
+
+/* Мобильная настройка */
+@media (max-width: 480px) {
+  :root {
+    --cart-btn-height: 40px;
+    --cart-btn-font: 13px;
+    --cart-btn-pad-x: 14px;
+    --cart-icon-size: 16px;
+  }
+}
