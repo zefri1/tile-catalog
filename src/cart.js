@@ -117,13 +117,19 @@ function updateCartModal() {
   cartTotal.textContent = `${Cart.totalSum()} ₽`;
 }
 
+// Make updateCartUI available globally
+window.updateCartUI = updateCartUI;
+window.Cart = Cart;
+
 // Initialize cart UI when the document is loaded
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', () => {
     updateCartUI();
     document.addEventListener('cart:update', updateCartUI);
+    document.addEventListener('products:rendered', updateCartUI);
   });
 } else {
   updateCartUI();
   document.addEventListener('cart:update', updateCartUI);
+  document.addEventListener('products:rendered', updateCartUI);
 }
