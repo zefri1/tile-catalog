@@ -316,13 +316,6 @@ class TileCatalog {
         const ph = `<div class="product-placeholder" ${p.image ? 'style="display:none"' : ''}>🏠</div>`; 
         const animationDelay = (this.renderIndex + idx) % 12 * 0.1;
         
-        // Проверяем, есть ли товар в корзине
-        const inCart = window.Cart && window.Cart.state[p.id] && window.Cart.state[p.id].qty > 0;
-        const cartQty = inCart ? window.Cart.state[p.id].qty : 0;
-        const cartClass = inCart ? 'in-cart' : '';
-        const cartText = inCart ? 'В корзине' : 'В корзину';
-        const counterStyle = inCart ? '' : 'style="display: none;"';
-        
         return `<article class="product-card" data-product-id="${p.id}" style="animation-delay: ${animationDelay}s;">
           <div class="product-image">${img}${ph}</div>
           <div class="product-info">
@@ -333,16 +326,11 @@ class TileCatalog {
             <div class="product-price">${p.price.toLocaleString('ru-RU')} ₽</div>
             <div class="product-status">${badge}</div>
             <div class="product-actions">
-              <button class="btn btn-primary add-to-cart ${cartClass}" data-id="${p.id}">
+              <button class="btn btn-primary add-to-cart" data-id="${p.id}">
                 <svg class="icon"><use href="#cart-icon"></use></svg>
-                <span class="cart-text">${cartText}</span>
-                <span class="cart-counter" ${counterStyle}>${cartQty}</span>
+                <span class="cart-text">В корзину</span>
+                <span class="cart-counter hidden">0</span>
               </button>
-              <div class="product-qty" data-id="${p.id}" aria-live="polite">
-                <button class="qty-btn dec" aria-label="Уменьшить">–</button>
-                <span class="qty-value">0</span>
-                <button class="qty-btn inc" aria-label="Увеличить">+</button>
-              </div>
             </div>
           </div>
         </article>`; 
@@ -355,7 +343,12 @@ class TileCatalog {
         requestAnimationFrame(renderChunk); 
       } else { 
         this.attachCardClicks(); 
-        this.ensureLoadMore(); 
+        this.ensureLoadMore();
+        // Update cart UI after rendering products
+        if (window.updateCartUI) {
+          window.updateCartUI();
+        }
+        document.dispatchEvent(new CustomEvent('products:rendered'));
       } 
     }; 
     
@@ -423,7 +416,12 @@ class TileCatalog {
     if (modalCloseBtn) modalCloseBtn.onclick = closeModal; 
     if (modalBackdrop) modalBackdrop.onclick = closeModal; 
     const handleEsc = (e) => { if (e.key === 'Escape') { closeModal(); document.removeEventListener('keydown', handleEsc); } }; 
-    document.addEventListener('keydown', handleEsc); 
+    document.addEventListener('keydown', handleEsc);
+    
+    // Update modal cart button state
+    if (window.updateCartUI) {
+      window.updateCartUI();
+    }
   }
 }
 
