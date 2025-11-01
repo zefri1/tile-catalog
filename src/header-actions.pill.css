@@ -4,16 +4,43 @@
 .header .action-btn:hover{background:rgba(255,255,255,.9);border-color:color-mix(in oklab,var(--color-border) 90%,transparent);box-shadow:0 2px 6px rgba(0,0,0,.06)}
 .header .action-btn:active{transform:translateY(1px)}
 
-/* Увеличенная кнопка телефона */
-.header .action-btn[href^="tel"]{min-width:56px;height:48px;padding:0 1rem;font-size:18px}
-.header .action-btn[href^="tel"] .icon{font-size:20px}
+/* Контрастная длинная кнопка телефона с текстом */
+.header .action-btn[href^="tel"]{
+  background:#007bff;
+  border-color:#0056b3;
+  color:white;
+  padding:0 1rem;
+  gap:.5rem;
+  font-weight:500;
+  font-size:14px;
+}
+.header .action-btn[href^="tel"]:hover{
+  background:#0056b3;
+  border-color:#004085;
+  color:white;
+}
+.header .action-btn[href^="tel"] .icon{
+  font-size:16px;
+}
 
 .header .icon-vk{width:18px;height:18px}
 .header .action-btn .icon{font-size:16px}
 /* Dark theme adjustments */
 [data-theme="dark"] .header .action-btn{background:rgba(255,255,255,.06);border-color:color-mix(in oklab, var(--color-border) 50%, transparent);color:var(--color-text)}
 [data-theme="dark"] .header .action-btn:hover{background:rgba(255,255,255,.12)}
+
+/* Кнопка телефона в темной теме */
+[data-theme="dark"] .header .action-btn[href^="tel"]{
+  background:#0d6efd;
+  border-color:#0a58ca;
+  color:white;
+}
+[data-theme="dark"] .header .action-btn[href^="tel"]:hover{
+  background:#0a58ca;
+  border-color:#084298;
+}
+
 /* Compact on small screens */
 @media (max-width:768px){.header .action-btn{height:36px;min-width:40px;padding:0 .6rem;border-radius:10px}
-/* Увеличенная кнопка телефона на мобильных */
-.header .action-btn[href^="tel"]{min-width:48px;height:42px;padding:0 .8rem}}
+/* Кнопка телефона на мобильных */
+.header .action-btn[href^="tel"]{padding:0 .8rem;gap:.4rem;font-size:13px}}
