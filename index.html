@@ -8,14 +8,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300..900;1,14..32,300..900&family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700;1,800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/src/styles.css?v=15">
-  <link rel="stylesheet" href="/src/patches.css?v=15">
-  <link rel="stylesheet" href="/src/header-actions.pill.css?v=16">
-  <link rel="stylesheet" href="/src/categories-marketplace.css?v=15">
-  <link rel="stylesheet" href="/src/categories-panel.css?v=15">
-  <link rel="stylesheet" href="/src/categories-panel.hide.css?v=15">
-  <link rel="stylesheet" href="/src/scroll-fix.css?v=15">
-  <link rel="stylesheet" href="/src/sidebar-breadcrumbs-remove.css?v=15">
+  <link rel="stylesheet" href="/src/styles.css?v=16">
+  <link rel="stylesheet" href="/src/patches.css?v=16">
+  <link rel="stylesheet" href="/src/header-actions.pill.css?v=17">
+  <link rel="stylesheet" href="/src/categories-marketplace.css?v=16">
+  <link rel="stylesheet" href="/src/categories-panel.css?v=16">
+  <link rel="stylesheet" href="/src/categories-panel.hide.css?v=16">
+  <link rel="stylesheet" href="/src/scroll-fix.css?v=16">
+  <link rel="stylesheet" href="/src/sidebar-breadcrumbs-remove.css?v=16">
   
   <!-- SVG спрайты -->
   <svg style="display: none;">
@@ -27,7 +27,8 @@
         <path d="M15.684 0H8.316C1.592 0 0 1.592 0 8.316v7.368C0 22.408 1.592 24 8.316 24h7.368C22.408 24 24 22.408 24 15.684V8.316C24 1.592 22.408 0 15.684 0zm3.692 17.123h-1.744c-.66 0-.863-.525-2.049-1.712-1.033-1.004-1.49-.903-1.734-.903-.354 0-.456-.101-.456-.590V12.44c0-.304-.085-.456-.538-.456H11.6c-1.343 0-2.611.807-2.611.807-.304.203-.456.304-.456.609 0 .203.152.405.304.405.811 0 1.053.304 1.256.911.456 1.053 1.256 2.713 1.256 2.713.304.609.456.761.659.761.304 0 .405-.152.862-.608 0 0 2.205-2.206 2.713-2.866.304-.456.203-.761-.203-1.004 0 0-.659-.405-2.002-1.443-.912-.709-.709-1.004-.203-1.611.912-1.105 2.306-2.917 2.306-2.917.456-.708.304-1.105-.203-1.105h-1.744c-.354 0-.558.203-.709.456 0 0-1.357 2.002-2.103 2.611-.405.354-.608.456-.811.152-.203-.304-.152-.912-.152-1.359 0-1.206.203-3.056.203-3.056.051-.405-.051-.761-.456-.862-.304-.102-.66-.152-1.105-.152-.912 0-1.662.051-2.103.456-.304.253-.507.811-.253.842.405.051.66.304.862.659.254.506.254 1.611.254 1.611s.152 1.408-.354 1.611c-.354.152-.842-.152-1.892-2.002 0 0-1.307-1.996-1.814-2.814-.203-.304-.456-.456-.811-.456H5.481c-.405 0-.507.203-.507.456 0 .254.203.608.861 1.762 1.205 2.205 2.611 4.361 4.106 5.598C11.448 18.025 12.958 18.38 14.57 18.38h.608c.354 0 .456-.203.456-.608v-1.408c0-.405.086-.486.354-.486.203 0 .558.101 1.388.964.948.964 1.105 1.408 1.641 1.408h1.744c.405 0 .608-.203.49-.608-.127-.405-.583-.994-1.187-1.692z"/>
       </symbol>
       <symbol id="cart-check-icon" viewBox="0 0 24 24" fill="none">
-        <path d="M6.29977 5H21L19 12H7.37671M20 16H8L6 3H3M9 20C9 20.5523 8.55228 21 8 21C7.44772 21 7 20.5523 7 20C7 19.4477 7.44772 19 8 19C8.55228 19 9 19.4477 9 20ZM20 20C20 20.5523 19.5523 21 19 21C18.4477 21 18 20.5523 18 20C18 19.4477 18.4477 19 19 19C19.5523 19 20 19.4477 20 20Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M6.29977 5H21L19 12H7.37671M20 16H8L6 3H3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M9 20C9 20.5523 8.55228 21 8 21C7.44772 21 7 20.5523 7 20C7 19.4477 7.44772 19 8 19C8.55228 19 9 19.4477 9 20ZM20 20C20 20.5523 19.5523 21 19 21C18.4477 21 18 20.5523 18 20C18 19.4477 18.4477 19 19 19C19.5523 19 20 19.4477 20 20Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         <path d="M9 12L11 14L15 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
       </symbol>
     </defs>
@@ -108,6 +109,30 @@
     
     [data-theme="dark"] .icon {
       color: inherit;
+    }
+    
+    /* Счетчик товаров в корзине в шапке */
+    .cart-counter {
+      position: absolute;
+      top: -8px;
+      right: -8px;
+      background: var(--color-accent, #ff6b35);
+      color: white;
+      border-radius: 50%;
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 600;
+      min-width: 20px;
+      font-family: inherit;
+      line-height: 1;
+    }
+    
+    .cart-counter.hidden {
+      display: none;
     }
     
     /* Стили корзины */
@@ -285,18 +310,35 @@
       padding: 0.5rem;
       font-size: 0.85rem;
       position: relative;
+      border: 1px solid var(--color-border);
+      background: var(--color-surface);
+      color: var(--color-text);
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      font-family: inherit;
+    }
+    
+    .add-to-cart:hover {
+      background: var(--color-primary);
+      border-color: var(--color-primary);
     }
     
     .add-to-cart.in-cart {
-      background: var(--color-success);
-      border-color: var(--color-success);
+      background: var(--color-success, #22c55e);
+      border-color: var(--color-success, #22c55e);
+      color: white;
     }
     
     .add-to-cart .cart-counter {
       position: absolute;
       top: -8px;
       right: -8px;
-      background: var(--color-accent);
+      background: var(--color-accent, #ff6b35);
       color: white;
       border-radius: 50%;
       width: 20px;
@@ -307,6 +349,10 @@
       font-size: 0.75rem;
       font-weight: 600;
       min-width: 20px;
+    }
+    
+    .add-to-cart .cart-counter.hidden {
+      display: none;
     }
     
     .product-qty {
@@ -341,15 +387,16 @@
     }
     
     .modal__actions .add-to-cart.in-cart {
-      background: var(--color-success);
-      border-color: var(--color-success);
+      background: var(--color-success, #22c55e);
+      border-color: var(--color-success, #22c55e);
+      color: white;
     }
     
     .modal__actions .cart-counter {
       position: absolute;
       top: -8px;
       right: -8px;
-      background: var(--color-accent);
+      background: var(--color-accent, #ff6b35);
       color: white;
       border-radius: 50%;
       width: 24px;
@@ -365,7 +412,7 @@
   <script>
     window.SHEET_JSON_URL = 'https://kmtbot-d0pm.onrender.com/api/items';
     window.SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRfhgka5nFoR1TXYDGQ5CziYYqGSDXjhw_yJeO-MqFTb-k_RWlkjvaWxy9vBzLuKmo4KdCnz2SAdvMh/pub?gid=0&single=true&output=csv';
-    window.SHEET_CACHE_BUSTER = 'v=15';
+    window.SHEET_CACHE_BUSTER = 'v=16';
     window.DEBUG_MODE = true;
   </script>
 </head>
@@ -397,8 +444,9 @@
           <a href="https://vk.com/plitochik44" target="_blank" class="action-btn" title="VK" aria-label="VK">
             <svg class="icon"><use href="#vk-icon"></use></svg>
           </a>
-          <button id="cart-btn" class="action-btn" title="Корзина" aria-label="Корзина">
+          <button id="cart-btn" class="action-btn" title="Корзина" aria-label="Корзина" style="position: relative;">
             <svg class="icon"><use href="#cart-icon"></use></svg>
+            <span id="cart-counter" class="cart-counter hidden">0</span>
           </button>
           <button id="theme-toggle" class="action-btn" title="Сменить тему" aria-label="Сменить тему"><span class="theme-icon">🌙</span></button>
         </div>
@@ -448,11 +496,11 @@
       <div class="modal__content">
         <div class="modal__media"><div class="modal__image-wrap"><img id="modal-image" alt=""><div id="modal-image-ph" class="modal__placeholder">🏠</div></div></div>
         <div class="modal__details"><h2 id="modal-title" class="modal__title"></h2><div class="modal__price-row"><div id="modal-price" class="modal__price"></div><div id="modal-badges" class="modal__badges"></div></div><div class="modal__meta"><div class="meta-item"><span>Бренд:</span> <strong id="modal-brand"></strong></div><div class="meta-item"><span>Цвет:</span> <strong id="modal-color"></strong></div><div class="meta-item"><span>Статус:</span> <strong id="modal-status"></strong></div></div><p id="modal-desc" class="modal__desc"></p><div class="modal__actions"><a id="modal-vk-btn" href="https://vk.com/plitochik44" target="_blank" class="btn btn-secondary" title="Написать в VK" aria-label="Написать в VK">
-            <svg class="icon"><use href="#vk-icon"></use></svg> VK
+            <svg class="icon"><use href="#vk-icon"></use></svg>
           </a><button id="modal-add-to-cart" class="btn btn-secondary add-to-cart" data-id="">
             <svg class="icon"><use href="#cart-icon"></use></svg>
             <span class="cart-text">В корзину</span>
-            <span class="cart-counter" style="display: none;">0</span>
+            <span class="cart-counter hidden">0</span>
           </button><a id="modal-phone-btn" href="tel:+74951234567" class="btn btn-primary">📞 Позвонить</a></div>
         </div>
       </div>
@@ -478,7 +526,7 @@
             <div class="cart-total">Итого: <strong id="cart-total">0 ₽</strong></div>
             <div class="cart-actions">
               <a href="https://vk.com/plitochik44" target="_blank" class="btn btn-secondary" title="Написать в VK" aria-label="Написать в VK">
-                <svg class="icon"><use href="#vk-icon"></use></svg> VK
+                <svg class="icon"><use href="#vk-icon"></use></svg>
               </a>
               <a href="tel:+74951234567" class="btn btn-primary">📞 Позвонить</a>
             </div>
@@ -489,10 +537,10 @@
   </div>
 
   <!-- Модули -->
-  <script type="module" src="/src/categories-marketplace.js?v=15"></script>
-  <script type="module" src="/src/categories.patch.js?v=15"></script>
-  <script type="module" src="/src/catalog-enhanced.js?v=15"></script>
-  <script type="module" src="/src/cart.js?v=15"></script>
-  <script type="module" src="/src/main.js?v=15"></script>
+  <script type="module" src="/src/categories-marketplace.js?v=16"></script>
+  <script type="module" src="/src/categories.patch.js?v=16"></script>
+  <script type="module" src="/src/catalog-enhanced.js?v=16"></script>
+  <script type="module" src="/src/cart.js?v=16"></script>
+  <script type="module" src="/src/main.js?v=16"></script>
 </body>
 </html>
