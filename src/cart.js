@@ -7,18 +7,96 @@ function totalSum(state){ return Object.values(state).reduce((a,i)=>a + (i.qty||
 
 export const Cart = {
   state: load(),
+  
+  // Добавить товар в корзину (всегда количество = 1)
   add(item){
-    const cur = this.state[item.id] || { id:item.id, name:item.name, price:item.price||0, image:item.image||'', qty:0 };
-    cur.qty += 1; this.state[item.id]=cur; save(this.state);
+    this.state[item.id] = { 
+      id: item.id, 
+      name: item.name, 
+      price: item.price || 0, 
+      image: item.image || '', 
+      qty: 1 
+    };
+    save(this.state);
     document.dispatchEvent(new CustomEvent('cart:update'));
   },
-  dec(id){ if(!this.state[id]) return; this.state[id].qty = Math.max(0, this.state[id].qty-1); if(this.state[id].qty===0) delete this.state[id]; save(this.state); document.dispatchEvent(new CustomEvent('cart:update')); },
-  set(id, qty){ if(qty<=0){ delete this.state[id]; } else { if(!this.state[id]) return; this.state[id].qty = qty; } save(this.state); document.dispatchEvent(new CustomEvent('cart:update')); },
-  clear(){ this.state={}; save(this.state); document.dispatchEvent(new CustomEvent('cart:update')); },
+  
+  // Переключить товар в корзине (добавить/удалить)
+  toggle(item){
+    if(this.state[item.id]) {
+      // Если товар есть в корзине - удаляем
+      delete this.state[item.id];
+    } else {
+      // Если товара нет - добавляем с количеством 1
+      this.state[item.id] = { 
+        id: item.id, 
+        name: item.name, 
+        price: item.price || 0, 
+        image: item.image || '', 
+        qty: 1 
+      };
+    }
+    save(this.state);
+    document.dispatchEvent(new CustomEvent('cart:update'));
+  },
+  
+  // Увеличить количество (только для модального окна корзины)
+  inc(id){ 
+    if(!this.state[id]) return; 
+    this.state[id].qty += 1; 
+    save(this.state); 
+    document.dispatchEvent(new CustomEvent('cart:update')); 
+  },
+  
+  // Уменьшить количество
+  dec(id){ 
+    if(!this.state[id]) return; 
+    this.state[id].qty = Math.max(0, this.state[id].qty-1); 
+    if(this.state[id].qty === 0) delete this.state[id]; 
+    save(this.state); 
+    document.dispatchEvent(new CustomEvent('cart:update')); 
+  },
+  
+  // Установить конкретное количество
+  set(id, qty){ 
+    if(qty <= 0){ 
+      delete this.state[id]; 
+    } else { 
+      if(!this.state[id]) return; 
+      this.state[id].qty = qty; 
+    } 
+    save(this.state); 
+    document.dispatchEvent(new CustomEvent('cart:update')); 
+  },
+  
+  // Удалить товар
+  remove(id){
+    delete this.state[id];
+    save(this.state);
+    document.dispatchEvent(new CustomEvent('cart:update'));
+  },
+  
+  // Очистить корзину
+  clear(){ 
+    this.state = {}; 
+    save(this.state); 
+    document.dispatchEvent(new CustomEvent('cart:update')); 
+  },
+  
+  // Получить общее количество товаров
   totalCount(){ return totalCount(this.state); },
+  
+  // Получить общую сумму
   totalSum(){ return totalSum(this.state); },
+  
+  // Получить все товары
   items(){ return Object.values(this.state); },
-  getItem(id) { return this.state[id] || null; }
+  
+  // Получить конкретный товар
+  getItem(id) { return this.state[id] || null; },
+  
+  // Проверить, есть ли товар в корзине
+  hasItem(id) { return !!this.state[id]; }
 };
 
 // UI update functions
@@ -42,7 +120,6 @@ export function updateCartUI() {
     if (!productId) return;
     
     const cartItem = Cart.getItem(productId);
-    const counter = button.querySelector('.cart-counter');
     const textSpan = button.querySelector('.cart-text');
     const icon = button.querySelector('.icon use');
     
@@ -51,20 +128,11 @@ export function updateCartUI() {
       button.classList.add('in-cart');
       if (textSpan) textSpan.textContent = 'В корзине';
       if (icon) icon.setAttribute('href', '#cart-check-icon');
-      
-      if (counter) {
-        counter.textContent = cartItem.qty;
-        counter.classList.remove('hidden');
-      }
     } else {
       // Item is not in cart
       button.classList.remove('in-cart');
       if (textSpan) textSpan.textContent = 'В корзину';
       if (icon) icon.setAttribute('href', '#cart-icon');
-      
-      if (counter) {
-        counter.classList.add('hidden');
-      }
     }
   });
   
@@ -100,7 +168,7 @@ function updateCartModal() {
           <span class="qty-value">${item.qty}</span>
           <button class="qty-btn qty-inc" data-id="${item.id}">+</button>
         </div>
-        <div class="cart-price">${item.price} ₽</div>
+        <div class="cart-price">${(item.price * item.qty).toLocaleString('ru-RU')} ₽</div>
       </div>
     `).join('');
     
@@ -110,11 +178,11 @@ function updateCartModal() {
     });
     
     cartList.querySelectorAll('.qty-inc').forEach(btn => {
-      btn.addEventListener('click', () => Cart.add({id: btn.dataset.id}));
+      btn.addEventListener('click', () => Cart.inc(btn.dataset.id));
     });
   }
   
-  cartTotal.textContent = `${Cart.totalSum()} ₽`;
+  cartTotal.textContent = `${Cart.totalSum().toLocaleString('ru-RU')} ₽`;
 }
 
 // Make updateCartUI available globally
