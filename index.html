@@ -76,6 +76,205 @@
       width: 16px;
       height: 16px;
     }
+    
+    /* Стили корзины */
+    .cart {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      padding: 1rem 1.25rem 1.25rem;
+    }
+    
+    .cart-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      max-height: 52vh;
+      overflow: auto;
+      border: 1px solid var(--color-border);
+      border-radius: var(--border-radius);
+      padding: 0.75rem;
+      background: var(--color-surface);
+    }
+    
+    .cart-item {
+      display: grid;
+      grid-template-columns: 56px 1fr auto;
+      gap: 0.75rem;
+      align-items: center;
+      border: 1px solid var(--color-border);
+      border-radius: 10px;
+      background: var(--color-surface-elevated);
+      padding: 0.5rem;
+    }
+    
+    .cart-thumb {
+      width: 56px;
+      height: 56px;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #eee;
+      display: grid;
+      place-items: center;
+      color: var(--color-text-muted);
+      font-size: 1.5rem;
+    }
+    
+    .cart-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    
+    .cart-name {
+      font-weight: 600;
+      font-size: 0.9rem;
+      line-height: 1.3;
+    }
+    
+    .cart-price {
+      font-weight: 700;
+      white-space: nowrap;
+      color: var(--color-primary);
+    }
+    
+    .cart-qty {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    
+    .qty-btn {
+      width: 28px;
+      height: 28px;
+      border: 1px solid var(--color-border);
+      background: var(--color-surface);
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      transition: all var(--transition-fast);
+    }
+    
+    .qty-btn:hover {
+      background: var(--color-primary);
+      color: var(--color-text);
+    }
+    
+    .cart-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-top: 0.5rem;
+      padding-top: 1rem;
+      border-top: 1px solid var(--color-border);
+    }
+    
+    .cart-total {
+      font-size: 1.2rem;
+      font-weight: 600;
+    }
+    
+    .cart-actions {
+      display: flex;
+      gap: 0.5rem;
+    }
+    
+    .cart-empty {
+      text-align: center;
+      padding: 2rem;
+      color: var(--color-text-secondary);
+      font-size: 0.9rem;
+    }
+    
+    .cart-empty-icon {
+      font-size: 3rem;
+      margin-bottom: 0.5rem;
+      opacity: 0.5;
+    }
+    
+    @media (max-width: 768px) {
+      .cart-item {
+        grid-template-columns: 48px 1fr;
+        grid-template-areas: "t n" "q p";
+        gap: 0.5rem;
+      }
+      
+      .cart-thumb {
+        grid-area: t;
+        width: 48px;
+        height: 48px;
+      }
+      
+      .cart-name {
+        grid-area: n;
+      }
+      
+      .cart-qty {
+        grid-area: q;
+      }
+      
+      .cart-price {
+        grid-area: p;
+        justify-self: end;
+      }
+      
+      .cart-footer {
+        flex-direction: column;
+        gap: 1rem;
+      }
+      
+      .cart-actions {
+        width: 100%;
+      }
+      
+      .cart-actions .btn {
+        flex: 1;
+      }
+    }
+    
+    /* Стили для кнопок на карточках */
+    .product-actions {
+      margin-top: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    
+    .add-to-cart {
+      width: 100%;
+      padding: 0.5rem;
+      font-size: 0.85rem;
+    }
+    
+    .product-qty {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.25rem;
+      opacity: 0;
+      transition: opacity var(--transition-fast);
+    }
+    
+    .product-qty.visible {
+      opacity: 1;
+    }
+    
+    .product-qty .qty-btn {
+      width: 24px;
+      height: 24px;
+      font-size: 0.8rem;
+    }
+    
+    .product-qty .qty-value {
+      min-width: 24px;
+      text-align: center;
+      font-weight: 600;
+      font-size: 0.85rem;
+    }
   </style>
   <script>
     window.SHEET_JSON_URL = 'https://kmtbot-d0pm.onrender.com/api/items';
@@ -112,6 +311,9 @@
           <a href="https://vk.com/plitochik44" target="_blank" class="action-btn" title="VK" aria-label="VK">
             <img src="Vk SVG Icon.svg" alt="VK" class="icon-vk">
           </a>
+          <button id="cart-btn" class="action-btn" title="Корзина" aria-label="Корзина">
+            🧭
+          </button>
           <button id="theme-toggle" class="action-btn" title="Сменить тему" aria-label="Сменить тему"><span class="theme-icon">🌙</span></button>
         </div>
       </div>
@@ -160,7 +362,34 @@
       <div class="modal__content">
         <div class="modal__media"><div class="modal__image-wrap"><img id="modal-image" alt=""><div id="modal-image-ph" class="modal__placeholder">🏠</div></div></div>
         <div class="modal__details"><h2 id="modal-title" class="modal__title"></h2><div class="modal__price-row"><div id="modal-price" class="modal__price"></div><div id="modal-badges" class="modal__badges"></div></div><div class="modal__meta"><div class="meta-item"><span>Бренд:</span> <strong id="modal-brand"></strong></div><div class="meta-item"><span>Цвет:</span> <strong id="modal-color"></strong></div><div class="meta-item"><span>Статус:</span> <strong id="modal-status"></strong></div></div><p id="modal-desc" class="modal__desc"></p><div class="modal__actions"><a id="modal-vk-btn" href="https://vk.com/plitochik44" target="_blank" class="btn btn-secondary" title="Написать в VK" aria-label="Написать в VK">
-            <img src="Vk SVG Icon.svg" alt="VK" class="icon-vk"></a><a id="modal-phone-btn" href="tel:+74951234567" class="btn btn-primary">📞 Позвонить</a><button type="button" class="btn" id="modal-close-btn">Закрыть</button></div>
+            <img src="Vk SVG Icon.svg" alt="VK" class="icon-vk"></a><button id="modal-add-to-cart" class="btn btn-secondary" data-id="">🧭 В корзину</button><a id="modal-phone-btn" href="tel:+74951234567" class="btn btn-primary">📞 Позвонить</a><button type="button" class="btn" id="modal-close-btn">Закрыть</button></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="cart-modal" class="modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="cart-title">
+    <div class="modal__backdrop"></div>
+    <div class="modal__dialog" role="document">
+      <button class="modal__close" type="button" aria-label="Закрыть">✕</button>
+      <div class="modal__content" style="grid-template-columns: 1fr;">
+        <div class="cart">
+          <h2 id="cart-title" class="modal__title">Корзина</h2>
+          <div id="cart-list" class="cart-list">
+            <div class="cart-empty">
+              <div class="cart-empty-icon">🧭</div>
+              <p>Корзина пуста</p>
+            </div>
+          </div>
+          <div class="cart-footer">
+            <div class="cart-total">Итого: <strong id="cart-total">0 ₽</strong></div>
+            <div class="cart-actions">
+              <a href="https://vk.com/plitochik44" target="_blank" class="btn btn-secondary" title="Написать в VK" aria-label="Написать в VK">
+                <img src="Vk SVG Icon.svg" alt="VK" class="icon-vk">
+              </a>
+              <a href="tel:+74951234567" class="btn btn-primary">📞 Позвонить</a>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -170,6 +399,7 @@
   <script type="module" src="/src/categories-marketplace.js?v=15"></script>
   <script type="module" src="/src/categories.patch.js?v=15"></script>
   <script type="module" src="/src/catalog-enhanced.js?v=15"></script>
+  <script type="module" src="/src/cart.js?v=15"></script>
   <script type="module" src="/src/main.js?v=15"></script>
 </body>
 </html>
