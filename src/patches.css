@@ -21,10 +21,14 @@
 .modal__actions #modal-vk-btn{border-radius:999px}
 .modal__actions #modal-vk-btn:hover{background:var(--color-primary);border-color:var(--color-primary);color:#fff}
 
-/* Карточки каталога: кнопка в строку с ценой/бейджами ниже, сама кнопка занимает всю ширину столбца */
-.product-card .product-actions{margin-top:auto}
-.products-grid .product-card{display:flex;flex-direction:column}
-.products-grid .product-card .add-to-cart{margin-top:.5rem;width:100%;height:64px;border-radius:12px}
+/* Карточки каталога: кнопка в одну строку, без переноса текста */
+.product-card .add-to-cart{white-space:nowrap;display:flex;align-items:center;justify-content:center;gap:.5rem}
+.product-card .add-to-cart .icon{flex:0 0 auto}
+.product-card .add-to-cart .btn-text,.product-card .add-to-cart .cart-text{flex:0 0 auto}
 
-/* Контейнер карточек: выравнивание и фикс разрывов */
-.products-grid{align-items:stretch}
+/* Фикс ширины: чтобы текст не переносился на 2 строки, расширяем паддинги и минимальную ширину */
+.product-card .add-to-cart{min-width:220px;padding:0 20px;height:64px;border-radius:12px}
+
+/* Контейнер карточки — прижать кнопку к низу, остальное не трогать */
+.products-grid .product-card{display:flex;flex-direction:column}
+.product-card .product-actions{margin-top:auto}
