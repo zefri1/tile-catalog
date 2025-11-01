@@ -107,7 +107,8 @@ export const Cart = {
 
 // UI update functions
 export function updateCartUI() {
-  // Удален счетчик из хедера - теперь только кнопка корзины
+  // Update cart button icon based on theme
+  updateCartButtonIcon();
   
   // Update all add-to-cart buttons
   document.querySelectorAll('.add-to-cart').forEach(button => {
@@ -133,6 +134,17 @@ export function updateCartUI() {
   
   // Update cart modal
   updateCartModal();
+}
+
+function updateCartButtonIcon() {
+  // Update cart button icon based on current theme
+  const cartButton = document.getElementById('cart-btn');
+  if (cartButton) {
+    const icon = cartButton.querySelector('.icon use');
+    if (icon) {
+      icon.setAttribute('href', '#cart-icon');
+    }
+  }
 }
 
 function updateCartModal() {
@@ -169,18 +181,26 @@ function updateCartModal() {
     
     // Add event listeners for quantity buttons
     cartList.querySelectorAll('.qty-dec').forEach(btn => {
-      btn.addEventListener('click', () => Cart.dec(btn.dataset.id));
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        Cart.dec(btn.dataset.id);
+      });
     });
     
     cartList.querySelectorAll('.qty-inc').forEach(btn => {
-      btn.addEventListener('click', () => Cart.inc(btn.dataset.id));
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        Cart.inc(btn.dataset.id);
+      });
     });
   }
   
   cartTotal.textContent = `${Cart.totalSum().toLocaleString('ru-RU')} ₽`;
 }
 
-// Make updateCartUI available globally
+// Make functions available globally
 window.updateCartUI = updateCartUI;
 window.Cart = Cart;
 
@@ -190,9 +210,11 @@ if (document.readyState === 'loading') {
     updateCartUI();
     document.addEventListener('cart:update', updateCartUI);
     document.addEventListener('products:rendered', updateCartUI);
+    document.addEventListener('theme:changed', updateCartUI);
   });
 } else {
   updateCartUI();
   document.addEventListener('cart:update', updateCartUI);
   document.addEventListener('products:rendered', updateCartUI);
+  document.addEventListener('theme:changed', updateCartUI);
 }
