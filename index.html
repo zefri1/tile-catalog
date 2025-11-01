@@ -77,6 +77,38 @@
       height: 16px;
     }
     
+    /* Стили для SVG корзины */
+    .icon-cart {
+      width: 20px;
+      height: 20px;
+      display: block;
+    }
+    
+    .action-btn .icon-cart {
+      width: 20px;
+      height: 20px;
+    }
+    
+    .btn .icon-cart {
+      width: 16px;
+      height: 16px;
+      margin-right: 0.25rem;
+    }
+    
+    .cart-empty-icon .icon-cart {
+      width: 48px;
+      height: 48px;
+    }
+    
+    /* Адаптация цвета SVG корзины под тему */
+    [data-theme="light"] .icon-cart {
+      filter: brightness(0);
+    }
+    
+    [data-theme="dark"] .icon-cart {
+      filter: brightness(0) invert(1);
+    }
+    
     /* Стили корзины */
     .cart {
       display: flex;
@@ -194,6 +226,9 @@
       font-size: 3rem;
       margin-bottom: 0.5rem;
       opacity: 0.5;
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
     
     @media (max-width: 768px) {
@@ -312,7 +347,9 @@
             <img src="Vk SVG Icon.svg" alt="VK" class="icon-vk">
           </a>
           <button id="cart-btn" class="action-btn" title="Корзина" aria-label="Корзина">
-            🧭
+            <svg class="icon-cart" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M6.29977 5H21L19 12H7.37671M20 16H8L6 3H3M9 20C9 20.5523 8.55228 21 8 21C7.44772 21 7 20.5523 7 20C7 19.4477 7.44772 19 8 19C8.55228 19 9 19.4477 9 20ZM20 20C20 20.5523 19.5523 21 19 21C18.4477 21 18 20.5523 18 20C18 19.4477 18.4477 19 19 19C19.5523 19 20 19.4477 20 20Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
           </button>
           <button id="theme-toggle" class="action-btn" title="Сменить тему" aria-label="Сменить тему"><span class="theme-icon">🌙</span></button>
         </div>
@@ -362,7 +399,11 @@
       <div class="modal__content">
         <div class="modal__media"><div class="modal__image-wrap"><img id="modal-image" alt=""><div id="modal-image-ph" class="modal__placeholder">🏠</div></div></div>
         <div class="modal__details"><h2 id="modal-title" class="modal__title"></h2><div class="modal__price-row"><div id="modal-price" class="modal__price"></div><div id="modal-badges" class="modal__badges"></div></div><div class="modal__meta"><div class="meta-item"><span>Бренд:</span> <strong id="modal-brand"></strong></div><div class="meta-item"><span>Цвет:</span> <strong id="modal-color"></strong></div><div class="meta-item"><span>Статус:</span> <strong id="modal-status"></strong></div></div><p id="modal-desc" class="modal__desc"></p><div class="modal__actions"><a id="modal-vk-btn" href="https://vk.com/plitochik44" target="_blank" class="btn btn-secondary" title="Написать в VK" aria-label="Написать в VK">
-            <img src="Vk SVG Icon.svg" alt="VK" class="icon-vk"></a><button id="modal-add-to-cart" class="btn btn-secondary" data-id="">🧭 В корзину</button><a id="modal-phone-btn" href="tel:+74951234567" class="btn btn-primary">📞 Позвонить</a><button type="button" class="btn" id="modal-close-btn">Закрыть</button></div>
+            <img src="Vk SVG Icon.svg" alt="VK" class="icon-vk"></a><button id="modal-add-to-cart" class="btn btn-secondary" data-id="">
+            <svg class="icon-cart" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M6.29977 5H21L19 12H7.37671M20 16H8L6 3H3M9 20C9 20.5523 8.55228 21 8 21C7.44772 21 7 20.5523 7 20C7 19.4477 7.44772 19 8 19C8.55228 19 9 19.4477 9 20ZM20 20C20 20.5523 19.5523 21 19 21C18.4477 21 18 20.5523 18 20C18 19.4477 18.4477 19 19 19C19.5523 19 20 19.4477 20 20Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            В корзину</button><a id="modal-phone-btn" href="tel:+74951234567" class="btn btn-primary">📞 Позвонить</a><button type="button" class="btn" id="modal-close-btn">Закрыть</button></div>
         </div>
       </div>
     </div>
@@ -377,7 +418,11 @@
           <h2 id="cart-title" class="modal__title">Корзина</h2>
           <div id="cart-list" class="cart-list">
             <div class="cart-empty">
-              <div class="cart-empty-icon">🧭</div>
+              <div class="cart-empty-icon">
+                <svg class="icon-cart" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M6.29977 5H21L19 12H7.37671M20 16H8L6 3H3M9 20C9 20.5523 8.55228 21 8 21C7.44772 21 7 20.5523 7 20C7 19.4477 7.44772 19 8 19C8.55228 19 9 19.4477 9 20ZM20 20C20 20.5523 19.5523 21 19 21C18.4477 21 18 20.5523 18 20C18 19.4477 18.4477 19 19 19C19.5523 19 20 19.4477 20 20Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </div>
               <p>Корзина пуста</p>
             </div>
           </div>
