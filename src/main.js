@@ -1,110 +1,142 @@
 import { Cart, updateCartUI } from './cart.js';
 
-// Функция для обновления SVG иконок при переключении темы
+// Глобальные переменные для отслеживания состояния
+let themeObserver = null;
+let isUpdatingIcons = false;
+let iconUpdateTimeout = null;
+
+// Оптимизированная функция для обновления SVG иконок
 function updateCartIconsForTheme(theme) {
+  if (isUpdatingIcons) return;
+  isUpdatingIcons = true;
+  
   const isDark = theme === 'dark';
   const iconColor = isDark ? '#f1f5f9' : '#1e293b';
   
-  // Обновляем все SVG иконки корзины
-  const cartIcons = document.querySelectorAll('svg use[href="#cart-icon"], svg use[href="#cart-check-icon"]');
-  cartIcons.forEach(icon => {
-    const svg = icon.closest('svg');
-    if (svg) {
-      svg.style.color = iconColor;
-      // Принудительно обновляем стили
-      svg.style.stroke = iconColor;
-      svg.style.fill = iconColor;
-    }
+  // Обновляем только необходимые иконки
+  const svgSelectors = [
+    '#cart-btn svg',
+    '.modal svg use[href="#cart-icon"]',
+    '.modal svg use[href="#cart-check-icon"]',
+    '.modal svg use[href="#vk-icon"]',
+    '.add-to-cart svg',
+    '.header-actions svg'
+  ];
+  
+  svgSelectors.forEach(selector => {
+    const elements = document.querySelectorAll(selector);
+    elements.forEach(el => {
+      const svg = el.tagName === 'svg' ? el : el.closest('svg');
+      if (svg && svg.style) {
+        // Применяем стили через CSS классы вместо инлайновых стилей
+        svg.setAttribute('data-theme-updated', theme);
+      }
+    });
   });
   
-  // Обновляем VK иконки
-  const vkIcons = document.querySelectorAll('svg use[href="#vk-icon"]');
-  vkIcons.forEach(icon => {
-    const svg = icon.closest('svg');
-    if (svg) {
-      svg.style.color = iconColor;
-      svg.style.fill = iconColor;
-    }
-  });
-  
-  // Обновляем все иконки с классом .icon
-  const allIconSvgs = document.querySelectorAll('.icon svg, svg.icon');
-  allIconSvgs.forEach(svg => {
-    svg.style.color = iconColor;
-    if (svg.querySelector('use[href="#cart-icon"], use[href="#cart-check-icon"], use[href="#vk-icon"]')) {
-      svg.style.stroke = iconColor;
-      svg.style.fill = iconColor;
-    }
-  });
-  
-  // Диспатчим событие для уведомления о смене темы
-  document.dispatchEvent(new CustomEvent('theme:changed', { detail: { theme } }));
+  // Очищаем флаг через короткий таймаут
+  setTimeout(() => {
+    isUpdatingIcons = false;
+  }, 50);
 }
 
-// Дополнительная функция для принудительного обновления всех иконок
-function forceUpdateAllIcons() {
-  const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
-  updateCartIconsForTheme(currentTheme);
+// Оптимизированная функция принудительного обновления
+function debounceIconUpdate() {
+  if (iconUpdateTimeout) {
+    clearTimeout(iconUpdateTimeout);
+  }
   
-  // Принудительно перерисовываем все SVG
-  document.querySelectorAll('svg').forEach(svg => {
-    svg.style.display = 'none';
-    svg.offsetHeight; // trigger reflow
-    svg.style.display = '';
-  });
+  iconUpdateTimeout = setTimeout(() => {
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+    updateCartIconsForTheme(currentTheme);
+  }, 100);
 }
+
+// Очистка ресурсов
+function cleanup() {
+  if (themeObserver) {
+    themeObserver.disconnect();
+    themeObserver = null;
+  }
+  
+  if (iconUpdateTimeout) {
+    clearTimeout(iconUpdateTimeout);
+    iconUpdateTimeout = null;
+  }
+  
+  isUpdatingIcons = false;
+}
+
+// Обработчик выгрузки страницы
+window.addEventListener('beforeunload', cleanup);
+window.addEventListener('pagehide', cleanup);
 
 document.addEventListener('DOMContentLoaded', () => {
   // Initialize cart UI
   updateCartUI();
   
-  // Theme toggle functionality
+  // Theme toggle functionality - улучшенная логика
   const themeToggle = document.getElementById('theme-toggle');
   const themeIcon = themeToggle?.querySelector('.theme-icon');
   const currentTheme = localStorage.getItem('theme') || 'light';
   
   // Применяем тему при загрузке
   document.documentElement.setAttribute('data-theme', currentTheme);
-  if (themeIcon) themeIcon.textContent = currentTheme === 'dark' ? '☀️' : '🌙';
+  if (themeIcon) {
+    themeIcon.textContent = currentTheme === 'dark' ? '☀️' : '🌙';
+  }
   
-  // Обновляем иконки при загрузке с небольшой задержкой
-  setTimeout(() => {
+  // Однократное обновление иконок при загрузке
+  requestAnimationFrame(() => {
     updateCartIconsForTheme(currentTheme);
-    forceUpdateAllIcons();
-  }, 100);
-
-  themeToggle?.addEventListener('click', () => {
-    const current = document.documentElement.getAttribute('data-theme');
-    const newTheme = current === 'dark' ? 'light' : 'dark';
-    
-    // Применяем новую тему
-    document.documentElement.setAttribute('data-theme', newTheme);
-    localStorage.setItem('theme', newTheme);
-    if (themeIcon) themeIcon.textContent = newTheme === 'dark' ? '☀️' : '🌙';
-    
-    // Обновляем SVG иконки с задержкой для корректного применения CSS
-    setTimeout(() => {
-      updateCartIconsForTheme(newTheme);
-      forceUpdateAllIcons();
-    }, 50);
   });
+
+  // Обработчик переключения темы - без дублирования
+  if (themeToggle) {
+    // Убираем все старые обработчики
+    const newThemeToggle = themeToggle.cloneNode(true);
+    themeToggle.parentNode.replaceChild(newThemeToggle, themeToggle);
+    const newThemeIcon = newThemeToggle.querySelector('.theme-icon');
+    
+    newThemeToggle.addEventListener('click', (e) => {
+      e.preventDefault();
+      
+      const current = document.documentElement.getAttribute('data-theme');
+      const newTheme = current === 'dark' ? 'light' : 'dark';
+      
+      // Применяем новую тему
+      document.documentElement.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+      
+      if (newThemeIcon) {
+        newThemeIcon.textContent = newTheme === 'dark' ? '☀️' : '🌙';
+      }
+      
+      // Отложенное обновление иконок
+      debounceIconUpdate();
+    });
+  }
 
   // Cart modal functionality
   const cartBtn = document.getElementById('cart-btn');
   const cartModal = document.getElementById('cart-modal');
 
   function openCart() {
-    cartModal.classList.add('open');
-    cartModal.setAttribute('aria-hidden', 'false');
-    document.body.classList.add('modal-open');
-    // Обновляем иконки при открытии модального окна
-    setTimeout(forceUpdateAllIcons, 50);
+    if (cartModal) {
+      cartModal.classList.add('open');
+      cartModal.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('modal-open');
+      // Обновляем иконки только в модальном окне
+      debounceIconUpdate();
+    }
   }
 
   function closeCart() {
-    cartModal.classList.remove('open');
-    cartModal.setAttribute('aria-hidden', 'true');
-    document.body.classList.remove('modal-open');
+    if (cartModal) {
+      cartModal.classList.remove('open');
+      cartModal.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('modal-open');
+    }
   }
 
   cartBtn?.addEventListener('click', (e) => {
@@ -113,14 +145,35 @@ document.addEventListener('DOMContentLoaded', () => {
     openCart();
   });
 
-  cartModal?.querySelector('.modal__backdrop')?.addEventListener('click', closeCart);
-  cartModal?.querySelector('.modal__close')?.addEventListener('click', closeCart);
-  
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && cartModal?.classList.contains('open')) {
+  // Оптимизированные обработчики закрытия модальных окон
+  const backdropHandler = (e) => {
+    if (e.target.classList.contains('modal__backdrop')) {
       closeCart();
     }
-  });
+  };
+  
+  const closeHandler = (e) => {
+    if (e.target.classList.contains('modal__close')) {
+      closeCart();
+    }
+  };
+  
+  cartModal?.addEventListener('click', backdropHandler);
+  cartModal?.addEventListener('click', closeHandler);
+  
+  // Обработчик ESC - только один
+  const escapeHandler = (e) => {
+    if (e.key === 'Escape') {
+      if (cartModal?.classList.contains('open')) {
+        closeCart();
+      }
+      if (productModal?.classList.contains('open')) {
+        closeProductModal();
+      }
+    }
+  };
+  
+  document.addEventListener('keydown', escapeHandler);
 
   // Product modal functionality
   const productModal = document.getElementById('product-modal');
@@ -134,6 +187,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const modalAddToCart = document.getElementById('modal-add-to-cart');
 
   function openProductModal(product) {
+    if (!productModal) return;
+    
     if (modalImage) modalImage.src = product.image || '';
     if (modalTitle) modalTitle.textContent = product.name || '';
     if (modalPrice) modalPrice.textContent = `${product.price || 0} ₽`;
@@ -147,28 +202,36 @@ document.addEventListener('DOMContentLoaded', () => {
     productModal.setAttribute('aria-hidden', 'false');
     document.body.classList.add('modal-open');
     
-    // Update the modal button state and icons
     updateCartUI();
-    setTimeout(forceUpdateAllIcons, 50);
+    debounceIconUpdate();
   }
 
   function closeProductModal() {
-    productModal.classList.remove('open');
-    productModal.setAttribute('aria-hidden', 'true');
-    document.body.classList.remove('modal-open');
+    if (productModal) {
+      productModal.classList.remove('open');
+      productModal.setAttribute('aria-hidden', 'true');
+      document.body.classList.remove('modal-open');
+    }
   }
 
-  productModal?.querySelector('.modal__backdrop')?.addEventListener('click', closeProductModal);
-  productModal?.querySelector('.modal__close')?.addEventListener('click', closeProductModal);
-  
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && productModal?.classList.contains('open')) {
+  // Обработчики для product modal
+  const productModalBackdropHandler = (e) => {
+    if (e.target.classList.contains('modal__backdrop')) {
       closeProductModal();
     }
-  });
+  };
+  
+  const productModalCloseHandler = (e) => {
+    if (e.target.classList.contains('modal__close')) {
+      closeProductModal();
+    }
+  };
+  
+  productModal?.addEventListener('click', productModalBackdropHandler);
+  productModal?.addEventListener('click', productModalCloseHandler);
 
-  // Add to cart functionality with TOGGLE logic for proper state switching
-  document.addEventListener('click', (e) => {
+  // Оптимизированный обработчик добавления в корзину
+  const addToCartHandler = (e) => {
     const addToCartBtn = e.target.closest('.add-to-cart');
     if (!addToCartBtn) return;
     
@@ -178,7 +241,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const productId = addToCartBtn.dataset.id;
     if (!productId) return;
     
-    // Get product data from the card or modal
+    // Get product data
     const card = addToCartBtn.closest('.product-card');
     const modal = addToCartBtn.closest('.modal');
     
@@ -204,18 +267,16 @@ document.addEventListener('DOMContentLoaded', () => {
       };
     }
     
-    // Используем toggle для правильного переключения состояния
     Cart.toggle(product);
-    
-    // Обновляем иконки после изменения корзины
-    setTimeout(forceUpdateAllIcons, 100);
-  });
+  };
+  
+  // Единый обработчик кликов
+  document.addEventListener('click', addToCartHandler);
 
-  // Grid view controls with proper column mapping
+  // Grid view controls
   const viewButtons = document.querySelectorAll('.view-btn');
   const productsGrid = document.getElementById('products-grid');
   
-  // Правильное отображение количества колонок
   const updateViewButtons = () => {
     viewButtons.forEach(btn => {
       const columns = parseInt(btn.dataset.columns);
@@ -223,8 +284,6 @@ document.addEventListener('DOMContentLoaded', () => {
       const desktopDigit = btn.querySelector('.view-digit--desktop');
       
       if (mobileDigit && desktopDigit) {
-        // На мобильных: 1 или 2 колонки
-        // На десктопе: 4 или 5 колонок
         mobileDigit.textContent = columns;
         desktopDigit.textContent = columns === 1 ? '4' : '5';
       }
@@ -245,31 +304,28 @@ document.addEventListener('DOMContentLoaded', () => {
       
       const columns = btn.dataset.columns;
       if (productsGrid) {
-        // Убираем все классы grid-* и добавляем новый
         productsGrid.className = productsGrid.className.replace(/grid-\d+/g, '');
         productsGrid.classList.add(`grid-${columns}`);
-        
-        // Проверяем, что класс применился
-        console.log(`Grid view changed to: ${columns} columns, classes:`, productsGrid.className);
       }
     });
   });
 
-  // Listen for cart updates
-  document.addEventListener('cart:update', () => {
+  // Оптимизированный обработчик обновления корзины
+  const cartUpdateHandler = () => {
     updateCartUI();
-    setTimeout(forceUpdateAllIcons, 50);
-  });
+    debounceIconUpdate();
+  };
   
-  // Product card click handlers
-  document.addEventListener('click', (e) => {
+  document.addEventListener('cart:update', cartUpdateHandler);
+  
+  // Оптимизированный обработчик кликов по карточкам
+  const productCardHandler = (e) => {
     const productCard = e.target.closest('.product-card');
     if (!productCard) return;
     
     // Don't open modal if clicking on buttons
     if (e.target.closest('.add-to-cart, .qty-btn, button')) return;
     
-    // Mock product data - in real app this would come from your data source
     const img = productCard.querySelector('img');
     const nameEl = productCard.querySelector('.product-name');
     const priceEl = productCard.querySelector('.product-price');
@@ -286,17 +342,28 @@ document.addEventListener('DOMContentLoaded', () => {
     };
     
     openProductModal(product);
+  };
+  
+  document.addEventListener('click', productCardHandler);
+  
+  // Оптимизированный MutationObserver - только для смены темы
+  themeObserver = new MutationObserver((mutations) => {
+    let shouldUpdateIcons = false;
+    
+    mutations.forEach((mutation) => {
+      if (mutation.type === 'attributes' && 
+          mutation.attributeName === 'data-theme') {
+        shouldUpdateIcons = true;
+      }
+    });
+    
+    if (shouldUpdateIcons) {
+      debounceIconUpdate();
+    }
   });
   
-  // Дополнительное обновление иконок при изменении DOM
-  const observer = new MutationObserver(() => {
-    setTimeout(forceUpdateAllIcons, 100);
-  });
-  
-  observer.observe(document.body, {
-    childList: true,
-    subtree: true,
+  themeObserver.observe(document.documentElement, {
     attributes: true,
-    attributeFilter: ['class', 'data-theme']
+    attributeFilter: ['data-theme']
   });
 });
