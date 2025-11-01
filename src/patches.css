@@ -10,5 +10,12 @@
 #modal-phone-btn{background:linear-gradient(135deg,#ffed4e 0%, #ffdd00 100%);border:2px solid #e6c300;color:#222;min-width:200px;height:44px;padding:0 1.25rem;border-radius:12px;font-weight:700;line-height:1;display:inline-flex;align-items:center;justify-content:center;gap:.6rem}
 #modal-phone-btn:hover{background:linear-gradient(135deg,#ffdd00 0%, #ffd000 100%);border-color:#d4af00;box-shadow:0 4px 12px rgba(255,221,0,.45);transform:translateY(-1px)}
 #modal-phone-btn:active{transform:translateY(0)}
+/* Убираем дублирующиеся иконки и номер */
 #modal-phone-btn::before{content:'\1F4DE';font-size:18px}
-[data-theme="dark"] #modal-phone-btn{color:#222}
+#modal-phone-btn .icon, #modal-phone-btn span{display:none}
+
+/* VK кнопка: заменить текст на логотип как в шапке */
+#modal-vk-btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem}
+#modal-vk-btn::before{content:'';display:inline-block;width:18px;height:18px;mask:url('data:image/svg+xml;utf8,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 24 24\"><path d=\"M12.91 17c-4.55 0-7.16-3.1-7.27-8.27h2.3c.07 3.55 1.63 5.05 2.86 5.36V8.73h2.16v3.08c1.21-.13 2.49-1.52 2.92-3.08h2.18c-.33 1.87-1.72 3.26-2.71 3.88.99.48 2.59 1.71 3.19 3.39h-2.46c-.47-1.14-1.59-2.08-3.12-2.22v2.22h-2.16V14.8c-1.6-.4-3.16-1.78-3.78-4.01.84 3.02 2.94 4.21 4.78 4.21.21 0 .41-.01.6-.03\"/></svg>') no-repeat center / contain;background:currentColor}
+#modal-vk-btn{font-size:0}
+#modal-vk-btn::after{content:''}
