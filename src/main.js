@@ -126,7 +126,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Add to cart functionality with toggle logic
+  // Add to cart functionality with TOGGLE logic for proper state switching
   document.addEventListener('click', (e) => {
     const addToCartBtn = e.target.closest('.add-to-cart');
     if (!addToCartBtn) return;
@@ -163,8 +163,8 @@ document.addEventListener('DOMContentLoaded', () => {
       };
     }
     
-    // Используем add вместо toggle для корректного увеличения количества
-    Cart.add(product);
+    // Используем toggle для правильного переключения состояния
+    Cart.toggle(product);
   });
 
   // Grid view controls with proper column mapping
