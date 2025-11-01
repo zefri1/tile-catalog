@@ -1,6 +1,7 @@
 /**
  * Каталог плитки - Современные стили
  * Полный рефакторинг 2025 + Пагинация
+ * Fixed: Исправлена сетка товаров для корректного отображения 4 колонок
  */
 
 /* ===== CSS переменные ===== */
@@ -37,7 +38,19 @@
   --container-max-width: 1280px;
   --border-radius: 12px;
   --border-radius-sm: 8px;
-  /* VK в модалках: компактная круглая кнопка только с иконкой */
+  --border-radius-lg: 16px;
+  
+  /* Шрифты */
+  --font-family-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-family-display: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  
+  /* Переходы */
+  --transition-fast: 0.15s ease-out;
+  --transition-normal: 0.3s ease-out;
+  --transition-slow: 0.5s ease-out;
+}
+
+/* VK в модалках: компактная круглая кнопка только с иконкой */
 .modal__actions a.btn[title="Написать в VK"],
 .cart-actions a.btn[title="Написать в VK"] {
   padding: 0.5rem;              /* квадратная компактная */
@@ -78,18 +91,6 @@
   background: var(--color-primary);
   border-color: var(--color-primary);
   color: #fff;
-}
-
-  --border-radius-lg: 16px;
-  
-  /* Шрифты */
-  --font-family-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-family-display: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  
-  /* Переходы */
-  --transition-fast: 0.15s ease-out;
-  --transition-normal: 0.3s ease-out;
-  --transition-slow: 0.5s ease-out;
 }
 
 /* Темная тема */
@@ -647,10 +648,32 @@ input, button, textarea, select {
   .view-digit--mobile{display:none}
   .view-digit--desktop{display:inline}
 }
-.products-grid.grid-1{grid-template-columns:1fr}
-.products-grid.grid-2{grid-template-columns:1fr 1fr}
-@media (min-width:1024px){.products-grid.grid-1{grid-template-columns:repeat(4,minmax(0,1fr))}.products-grid.grid-2{grid-template-columns:repeat(5,minmax(0,1fr))}}
-@media (max-width:768px){.filters-toggle-chip{justify-self:stretch}.view-controls{justify-content:center}.products-grid.grid-2{grid-template-columns:1fr 1fr}}
+
+/* ===== FIXED: Правильная сетка товаров ===== */
+/* Базовые настройки сетки */
+.products-grid.grid-1 { grid-template-columns: 1fr; }
+.products-grid.grid-2 { grid-template-columns: 1fr 1fr; }
+
+/* Десктопная версия - grid-1 = 4 колонки, grid-2 = 5 колонок */
+@media (min-width: 1024px) {
+  .products-grid.grid-1 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .products-grid.grid-2 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+}
+
+/* Планшетная версия */
+@media (max-width: 1023px) and (min-width: 769px) {
+  .products-grid.grid-1 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .products-grid.grid-2 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+/* Мобильная версия */
+@media (max-width: 768px) {
+  .filters-toggle-chip{justify-self:stretch}
+  .view-controls{justify-content:center}
+  .products-grid.grid-1 { grid-template-columns: 1fr; }
+  .products-grid.grid-2 { grid-template-columns: 1fr 1fr; }
+}
+
 @media (max-width:480px){.view-buttons{gap:.5rem;padding:.5rem}.view-btn{width:36px;height:36px}}
 .logo-circle{width:48px;height:48px;border-radius:50%;background:#f7c741;display:grid;place-items:center;overflow:hidden}
 .logo-circle img{width:100%;height:100%;object-fit:contain}
