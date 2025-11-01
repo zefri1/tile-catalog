@@ -8,14 +8,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300..900;1,14..32,300..900&family=Poppins:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,300;1,400;1,500;1,600;1,700;1,800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/src/styles.css?v=18" />
-  <link rel="stylesheet" href="/src/patches.css?v=18" />
-  <link rel="stylesheet" href="/src/header-actions.pill.css?v=18" />
-  <link rel="stylesheet" href="/src/categories-marketplace.css?v=18" />
-  <link rel="stylesheet" href="/src/categories-panel.css?v=18" />
-  <link rel="stylesheet" href="/src/categories-panel.hide.css?v=18" />
-  <link rel="stylesheet" href="/src/scroll-fix.css?v=18" />
-  <link rel="stylesheet" href="/src/sidebar-breadcrumbs-remove.css?v=18" />
+  <link rel="stylesheet" href="/src/styles.css?v=19" />
+  <link rel="stylesheet" href="/src/patches.css?v=19" />
+  <link rel="stylesheet" href="/src/header-actions.pill.css?v=19" />
+  <link rel="stylesheet" href="/src/categories-marketplace.css?v=19" />
+  <link rel="stylesheet" href="/src/categories-panel.css?v=19" />
+  <link rel="stylesheet" href="/src/categories-panel.hide.css?v=19" />
+  <link rel="stylesheet" href="/src/scroll-fix.css?v=19" />
+  <link rel="stylesheet" href="/src/sidebar-breadcrumbs-remove.css?v=19" />
 
   <svg style="display:none"><defs>
     <symbol id="cart-icon" viewBox="0 0 24 24" fill="none"><path d="M6.29977 5H21L19 12H7.37671M20 16H8L6 3H3M9 20C9 20.5523 8.55228 21 8 21C7.44772 21 7 20.5523 7 20C7 19.4477 7.44772 19 8 19C8.55228 19 9 19.4477 9 20ZM20 20C20 20.5523 19.5523 21 19 21C18.4477 21 18 20.5523 18 20C18 19.4477 18.4477 19 19 19C19.5523 19 20 19.4477 20 20Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
@@ -23,15 +23,62 @@
   </defs></svg>
 
   <style>
-    .modal__actions{display:flex;gap:.5rem}
-    .modal__actions #modal-add-to-cart{order:1}
-    .modal__actions #modal-phone-btn{order:2}
-    .modal__actions #modal-vk-btn{order:3;margin-left:auto}
+    /* FIXED: Правильная раскладка модального окна */
+    .modal__actions {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+    }
+    
+    .modal__actions #modal-add-to-cart {
+      order: 1;
+      margin-right: auto;
+    }
+    
+    .modal__actions #modal-phone-btn {
+      order: 2;
+    }
+    
+    .modal__actions #modal-vk-btn {
+      order: 3;
+      padding: 0.5rem;
+      min-width: 40px;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    /* Скрыть текстовые ноды VK кнопки */
+    .modal__actions #modal-vk-btn .vk-text {
+      display: none;
+    }
+    
+    /* Аналогично для корзины */
+    .cart-actions {
+      display: flex;
+      gap: 0.5rem;
+      align-items: center;
+      justify-content: flex-end;
+    }
+    
+    .cart-actions a.btn[title="Написать в VK"] {
+      padding: 0.5rem;
+      min-width: 40px;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
   </style>
   <script>
     window.SHEET_JSON_URL = 'https://kmtbot-d0pm.onrender.com/api/items';
     window.SHEET_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRfhgka5nFoR1TXYDGQ5CziYYqGSDXjhw_yJeO-MqFTb-k_RWlkjvaWxy9vBzLuKmo4KdCnz2SAdvMh/pub?gid=0&single=true&output=csv';
-    window.SHEET_CACHE_BUSTER = 'v=18';
+    window.SHEET_CACHE_BUSTER = 'v=19';
     window.DEBUG_MODE = true;
   </script>
 </head>
@@ -48,10 +95,10 @@
 
   <div id="cart-modal" class="modal" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="cart-title"><div class="modal__backdrop"></div><div class="modal__dialog" role="document"><button class="modal__close" type="button" aria-label="Закрыть">✕</button><div class="modal__content" style="grid-template-columns: 1fr;"><div class="cart"><h2 id="cart-title" class="modal__title">Корзина</h2><div id="cart-list" class="cart-list"><div class="cart-empty"><div class="cart-empty-icon"><svg class="icon"><use href="#cart-icon"></use></svg></div><p>Корзина пуста</p></div></div><div class="cart-footer"><div class="cart-total">Итого: <strong id="cart-total">0 ₽</strong></div><div class="cart-actions"><a href="https://vk.com/plitochik44" target="_blank" class="btn btn-secondary" title="Написать в VK" aria-label="Написать в VK"><svg class="icon"><use href="#vk-icon"></use></svg></a><a href="tel:+74951234567" class="btn btn-primary">📞 Позвонить</a></div></div></div></div></div></div>
 
-  <script type="module" src="/src/categories-marketplace.js?v=18"></script>
-  <script type="module" src="/src/categories.patch.js?v=18"></script>
-  <script type="module" src="/src/catalog-enhanced.js?v=18"></script>
-  <script type="module" src="/src/cart.js?v=18"></script>
-  <script type="module" src="/src/main.js?v=18"></script>
+  <script type="module" src="/src/categories-marketplace.js?v=19"></script>
+  <script type="module" src="/src/categories.patch.js?v=19"></script>
+  <script type="module" src="/src/catalog-enhanced.js?v=19"></script>
+  <script type="module" src="/src/cart.js?v=19"></script>
+  <script type="module" src="/src/main.js?v=19"></script>
 </body>
 </html>
