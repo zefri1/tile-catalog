@@ -4,23 +4,30 @@
 .header .action-btn:hover{background:rgba(255,255,255,.9);border-color:color-mix(in oklab,var(--color-border) 90%,transparent);box-shadow:0 2px 6px rgba(0,0,0,.06)}
 .header .action-btn:active{transform:translateY(1px)}
 
-/* Контрастная длинная кнопка телефона с текстом */
+/* Яркая желтая кнопка телефона с текстом */
 .header .action-btn[href^="tel"]{
-  background:#007bff;
-  border-color:#0056b3;
-  color:white;
-  padding:0 1rem;
+  background:linear-gradient(135deg, #ffed4e 0%, #ffdd00 100%);
+  border:2px solid #e6c300;
+  color:#333;
+  padding:0 1.2rem;
   gap:.5rem;
-  font-weight:500;
+  font-weight:600;
   font-size:14px;
+  text-shadow:none;
+  box-shadow:0 2px 8px rgba(255,221,0,.3);
 }
 .header .action-btn[href^="tel"]:hover{
-  background:#0056b3;
-  border-color:#004085;
-  color:white;
+  background:linear-gradient(135deg, #ffdd00 0%, #ffd000 100%);
+  border-color:#d4af00;
+  color:#222;
+  box-shadow:0 4px 12px rgba(255,221,0,.4);
+  transform:translateY(-1px);
+}
+.header .action-btn[href^="tel"]:active{
+  transform:translateY(0px);
 }
 .header .action-btn[href^="tel"] .icon{
-  font-size:16px;
+  font-size:18px;
 }
 
 .header .icon-vk{width:18px;height:18px}
@@ -31,16 +38,19 @@
 
 /* Кнопка телефона в темной теме */
 [data-theme="dark"] .header .action-btn[href^="tel"]{
-  background:#0d6efd;
-  border-color:#0a58ca;
-  color:white;
+  background:linear-gradient(135deg, #ffed4e 0%, #ffdd00 100%);
+  border:2px solid #e6c300;
+  color:#333;
+  box-shadow:0 2px 8px rgba(255,221,0,.4);
 }
 [data-theme="dark"] .header .action-btn[href^="tel"]:hover{
-  background:#0a58ca;
-  border-color:#084298;
+  background:linear-gradient(135deg, #ffdd00 0%, #ffd000 100%);
+  border-color:#d4af00;
+  color:#222;
+  box-shadow:0 4px 12px rgba(255,221,0,.5);
 }
 
 /* Compact on small screens */
 @media (max-width:768px){.header .action-btn{height:36px;min-width:40px;padding:0 .6rem;border-radius:10px}
 /* Кнопка телефона на мобильных */
-.header .action-btn[href^="tel"]{padding:0 .8rem;gap:.4rem;font-size:13px}}
+.header .action-btn[href^="tel"]{padding:0 1rem;gap:.4rem;font-size:13px}}
