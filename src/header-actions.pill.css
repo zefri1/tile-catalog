@@ -3,10 +3,17 @@
 .header .action-btn{display:inline-flex;align-items:center;justify-content:center;min-width:44px;height:40px;padding:0 .75rem;border-radius:12px;border:1px solid color-mix(in oklab,var(--color-border) 70%,transparent);background:rgba(255,255,255,.6);backdrop-filter:saturate(140%) blur(6px);-webkit-backdrop-filter:saturate(140%) blur(6px);box-shadow:0 1px 2px rgba(0,0,0,.04);color:var(--color-text);transition:all .18s ease}
 .header .action-btn:hover{background:rgba(255,255,255,.9);border-color:color-mix(in oklab,var(--color-border) 90%,transparent);box-shadow:0 2px 6px rgba(0,0,0,.06)}
 .header .action-btn:active{transform:translateY(1px)}
+
+/* Увеличенная кнопка телефона */
+.header .action-btn[href^="tel"]{min-width:56px;height:48px;padding:0 1rem;font-size:18px}
+.header .action-btn[href^="tel"] .icon{font-size:20px}
+
 .header .icon-vk{width:18px;height:18px}
 .header .action-btn .icon{font-size:16px}
 /* Dark theme adjustments */
 [data-theme="dark"] .header .action-btn{background:rgba(255,255,255,.06);border-color:color-mix(in oklab, var(--color-border) 50%, transparent);color:var(--color-text)}
 [data-theme="dark"] .header .action-btn:hover{background:rgba(255,255,255,.12)}
 /* Compact on small screens */
-@media (max-width:768px){.header .action-btn{height:36px;min-width:40px;padding:0 .6rem;border-radius:10px}}
+@media (max-width:768px){.header .action-btn{height:36px;min-width:40px;padding:0 .6rem;border-radius:10px}
+/* Увеличенная кнопка телефона на мобильных */
+.header .action-btn[href^="tel"]{min-width:48px;height:42px;padding:0 .8rem}}
