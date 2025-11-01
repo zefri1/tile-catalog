@@ -21,6 +21,9 @@ function updateCartIconsForTheme(theme) {
       svg.style.color = isDark ? '#f1f5f9' : '#1e293b';
     }
   });
+  
+  // Диспатчим событие для уведомления о смене темы
+  document.dispatchEvent(new CustomEvent('theme:changed', { detail: { theme } }));
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -164,9 +167,27 @@ document.addEventListener('DOMContentLoaded', () => {
     Cart.add(product);
   });
 
-  // Grid view controls
+  // Grid view controls with proper column mapping
   const viewButtons = document.querySelectorAll('.view-btn');
   const productsGrid = document.getElementById('products-grid');
+  
+  // Правильное отображение количества колонок
+  const updateViewButtons = () => {
+    viewButtons.forEach(btn => {
+      const columns = parseInt(btn.dataset.columns);
+      const mobileDigit = btn.querySelector('.view-digit--mobile');
+      const desktopDigit = btn.querySelector('.view-digit--desktop');
+      
+      if (mobileDigit && desktopDigit) {
+        // На мобильных: 1 или 2 колонки
+        // На десктопе: 4 или 5 колонок
+        mobileDigit.textContent = columns;
+        desktopDigit.textContent = columns === 1 ? '4' : '5';
+      }
+    });
+  };
+  
+  updateViewButtons();
   
   viewButtons.forEach(btn => {
     btn.addEventListener('click', () => {
@@ -180,7 +201,12 @@ document.addEventListener('DOMContentLoaded', () => {
       
       const columns = btn.dataset.columns;
       if (productsGrid) {
-        productsGrid.className = `products-grid grid-${columns}`;
+        // Убираем все классы grid-* и добавляем новый
+        productsGrid.className = productsGrid.className.replace(/grid-\d+/g, '');
+        productsGrid.classList.add(`grid-${columns}`);
+        
+        // Проверяем, что класс применился
+        console.log(`Grid view changed to: ${columns} columns, classes:`, productsGrid.className);
       }
     });
   });
