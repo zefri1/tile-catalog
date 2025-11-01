@@ -9,41 +9,38 @@
 .modal__actions a.btn[title="Написать в VK"],
 .cart-actions a.btn[title="Написать в VK"] {
   padding: 0.5rem;              /* квадратная компактная */
-  min-width: 40px;
-  width: 40px;
-  height: 40px;
+  min-width: 44px;
+  width: 44px;
+  height: 44px;
   border-radius: 999px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0;                        /* без зазора под текст */
+  gap: 0;
 }
 
 /* сам SVG чуть крупнее и наследует цвет */
 .modal__actions a.btn[title="Написать в VK"] .icon,
 .cart-actions a.btn[title="Написать в VK"] .icon {
-  width: 22px;
-  height: 22px;
+  width: 20px;
+  height: 20px;
   color: currentColor;
 }
 
-/* на всякий случай скрыть текстовые узлы, если появятся */
-.modal__actions a.btn[title="Написать в VK"] span,
-.cart-actions a.btn[title="Написать в VK"] span {
-  display: none;
-}
+/* выравнивание рядка кнопок в модалке */
+.modal__actions{display:flex;align-items:center;gap:.75rem}
+.modal__actions #modal-add-to-cart{min-height:64px}
+.modal__actions #modal-phone-btn{min-height:64px}
+.modal__actions #modal-vk-btn{margin-left:auto}
+
+/* выравнивание подписи "В корзину" справа от иконки в кнопке */
+.modal__actions #modal-add-to-cart .icon{width:28px;height:28px;margin-right:.5rem}
+.modal__actions #modal-add-to-cart .cart-text{font-size:1rem}
 
 /* темный/светлый фон согласован с btn-secondary */
 [data-theme="dark"] .modal__actions a.btn[title="Написать в VK"],
-[data-theme="dark"] .cart-actions a.btn[title="Написать в VK"] {
-  background: var(--color-surface-elevated);
-  border-color: var(--color-border);
-}
+[data-theme="dark"] .cart-actions a.btn[title="Написать в VK"]{background:var(--color-surface-elevated);border-color:var(--color-border)}
 
 /* hover: легкий акцент */
 .modal__actions a.btn[title="Написать в VK"]:hover,
-.cart-actions a.btn[title="Написать в VK"]:hover {
-  background: var(--color-primary);
-  border-color: var(--color-primary);
-  color: #fff;
-}
+.cart-actions a.btn[title="Написать в VK"]:hover{background:var(--color-primary);border-color:var(--color-primary);color:#fff}
