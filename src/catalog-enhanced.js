@@ -359,7 +359,7 @@ class TileCatalog {
       const html = slice.map((p, idx) => { 
         const badge = p.inStock ? '<span class="status-badge status-in-stock">В НАЛИЧИИ</span>' : '<span class="status-badge status-on-demand">ПОД ЗАКАЗ</span>'; 
         const validatedImageUrl = validateImageUrl(p.image);
-        const img = validatedImageUrl ? `<img src="${escapeHtmlAttr(validatedImageUrl)}" alt="${escapeHtmlAttr(p.name || '')}" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex'">` : ''; 
+        const img = validatedImageUrl ? `<img src="${escapeHtmlAttr(validatedImageUrl)}" alt="${escapeHtmlAttr(p.name || '')}" loading="lazy" data-img-error>` : ''; 
         const ph = `<div class="product-placeholder" ${validatedImageUrl ? 'style="display:none"' : ''}>🏠</div>`; 
         const animationDelay = (this.renderIndex + idx) % 12 * 0.1;
         const escapedId = escapeHtmlAttr(p.id);
@@ -389,7 +389,20 @@ class TileCatalog {
       }).join(''); 
       
       grid.insertAdjacentHTML('beforeend', html); 
-      this.renderIndex += slice.length; 
+      this.renderIndex += slice.length;
+      
+      // Attach error handlers to images after insertion
+      const images = grid.querySelectorAll('img[data-img-error]');
+      images.forEach(img => {
+        img.removeAttribute('data-img-error');
+        img.addEventListener('error', function() {
+          this.style.display = 'none';
+          const placeholder = this.nextElementSibling;
+          if (placeholder && placeholder.classList.contains('product-placeholder')) {
+            placeholder.style.display = 'flex';
+          }
+        });
+      });
       
       if (this.renderIndex < this.filteredProducts.length) { 
         requestAnimationFrame(renderChunk); 
@@ -412,10 +425,13 @@ class TileCatalog {
     if (!btn) { 
       const container = document.createElement('div'); 
       container.className = 'load-more-container'; 
-      container.innerHTML = `<button id="load-more-btn" class="load-more-btn">Показать ещё</button>`; 
+      btn = document.createElement('button');
+      btn.id = 'load-more-btn';
+      btn.className = 'load-more-btn';
+      btn.textContent = 'Показать ещё';
+      container.appendChild(btn);
       const productsArea = document.querySelector('.products-area'); 
       if (productsArea) productsArea.appendChild(container); 
-      btn = container.querySelector('#load-more-btn'); 
     } 
     if (btn) { 
       btn.style.display = this.renderIndex >= this.filteredProducts.length ? 'none' : 'block'; 
