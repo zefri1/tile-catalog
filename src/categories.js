@@ -1,3 +1,28 @@
+// Функция экранирования HTML для защиты от XSS
+function escapeHtml(text) {
+  if (text == null) return '';
+  const map = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  };
+  return String(text).replace(/[&<>"']/g, m => map[m]);
+}
+
+// Функция экранирования для HTML атрибутов
+function escapeHtmlAttr(text) {
+  if (text == null) return '';
+  const map = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;'
+  };
+  return String(text).replace(/[&<>"]/g, m => map[m]);
+}
+
 // Inject breadcrumbs-based category control
 function buildCategorySet(products){
   const counts = new Map();
@@ -13,12 +38,16 @@ export function renderCategoryBreadcrumbs(products, selected = []){
   const list = buildCategorySet(products);
   const crumbs = ['Все категории', ...selected];
   const crumbsHTML = crumbs.map((c,i)=>{
-    const label = i===0? 'Все категории' : c;
+    const label = i===0? 'Все категории' : escapeHtml(c);
     const active = i===crumbs.length-1? 'active' : '';
     return `<span class="crumb ${active}" data-idx="${i}">${label}</span>${i<crumbs.length-1? '<span class="sep">›</span>':''}`;
   }).join('');
 
-  const optionsHTML = list.map(([name,count])=>`<div class="category-item"><input type="checkbox" class="filter-checkbox" value="${name}"><span class="checkbox-text">${name}</span><span class="category-count">${count}</span></div>`).join('');
+  const optionsHTML = list.map(([name,count])=> {
+    const escapedName = escapeHtmlAttr(name);
+    const escapedNameText = escapeHtml(name);
+    return `<div class="category-item"><input type="checkbox" class="filter-checkbox" value="${escapedName}"><span class="checkbox-text">${escapedNameText}</span><span class="category-count">${count}</span></div>`;
+  }).join('');
 
   return `
     <div class="filter-group">
